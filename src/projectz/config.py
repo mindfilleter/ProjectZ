@@ -1,9 +1,10 @@
 import configparser
+from pathlib import Path
 import xdg.BaseDirectory
 
 # 1. Configuration Setup
-CONFIG_DIR = xdg.BaseDirectory.save_config_path("projectz")
-CONFIG_FILE = f"{CONFIG_DIR}/config.ini"
+CONFIG_DIR = Path(xdg.BaseDirectory.save_config_path("projectz"))
+CONFIG_FILE = CONFIG_DIR / "config.ini"
 
 
 def create_default_config():
@@ -23,6 +24,9 @@ def create_default_config():
         "volume": "0.5",
     }
 
+    # Create the directory if it doesn't exist
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
     # Write the configuration to the file
     with open(CONFIG_FILE, "w") as f:
         config.write(f)
@@ -34,7 +38,7 @@ def get_config():
     If no config file exists, a default one is created.
     """
     # Create a default config if necessary
-    if not xdg.BaseDirectory.load_config_paths("projectz/config.ini"):
+    if not CONFIG_FILE.is_file():
         create_default_config()
 
     # Load the configuration

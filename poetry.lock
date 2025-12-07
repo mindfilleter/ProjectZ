@@ -71,6 +71,18 @@ files = [
 ]
 
 [[package]]
+name = "pyxdg"
+version = "0.28"
+description = "PyXDG contains implementations of freedesktop.org standards in python."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pyxdg-0.28-py2.py3-none-any.whl", hash = "sha256:bdaf595999a0178ecea4052b7f4195569c1ff4d344567bccdc12dfdf02d545ab"},
+    {file = "pyxdg-0.28.tar.gz", hash = "sha256:3267bb3074e934df202af2ee0868575484108581e6f3cb006af1da35395e88b4"},
+]
+
+[[package]]
 name = "xdg"
 version = "6.0.0"
 description = "Variables defined by the XDG Base Directory Specification"
@@ -85,4 +97,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "da3a36ed8979b94c4b6421c2b3ad38588df7b1af63157705d65ab37b64e9a7ae"
+content-hash = "87aa31b811736934b4593473faf9b72fd442e13e6404473daaf5aaa83ef3d748"
