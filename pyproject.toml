@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A Zelda-like adventure game."
 authors = [
     {name = "wkmanire",email = "williamkmanire@gmail.com"},
-    {name = "luis", email= "luisormondesmanire@gmail.com"}
+    {name = "luis", email= "luismiguelormondesmanire@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.10"
