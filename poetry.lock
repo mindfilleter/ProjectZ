@@ -70,7 +70,19 @@ files = [
     {file = "pygame-2.6.1.tar.gz", hash = "sha256:56fb02ead529cee00d415c3e007f75e0780c655909aaa8e8bf616ee09c9feb1f"},
 ]
 
+[[package]]
+name = "xdg"
+version = "6.0.0"
+description = "Variables defined by the XDG Base Directory Specification"
+optional = false
+python-versions = ">=3.7,<4.0"
+groups = ["main"]
+files = [
+    {file = "xdg-6.0.0-py3-none-any.whl", hash = "sha256:df3510755b4395157fc04fc3b02467c777f3b3ca383257397f09ab0d4c16f936"},
+    {file = "xdg-6.0.0.tar.gz", hash = "sha256:24278094f2d45e846d1eb28a2ebb92d7b67fc0cab5249ee3ce88c95f649a1c92"},
+]
+
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.10"
-content-hash = "e1cbf88869d0e06864e18249cd9ef16ea13291268adbd94cda1de3687ceba1df"
+python-versions = ">=3.10,<4.0"
+content-hash = "da3a36ed8979b94c4b6421c2b3ad38588df7b1af63157705d65ab37b64e9a7ae"
