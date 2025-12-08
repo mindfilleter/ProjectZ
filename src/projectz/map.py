@@ -35,3 +35,24 @@ def get_collision_rects(tiled_map):
         collision_rects.append(rect)
 
     return collision_rects
+
+
+def get_exit_rects(tiled_map):
+    """
+    Reads the object layer called 'exits' and returns a list of Tiled objects.
+    These objects will be used to trigger a map change!
+    """
+    exits = []
+
+    # 1. Try to find the layer named "exits" in the map data.
+    try:
+        exit_layer = tiled_map.get_layer_by_name("exits")
+    except ValueError:
+        # If the layer isn't found, we just return an empty list. No crash!
+        return exits
+
+    # 2. Loop through every object the artist drew on that layer.
+    for obj in exit_layer:
+        exits.append(obj)
+
+    return exits

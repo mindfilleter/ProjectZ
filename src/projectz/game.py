@@ -7,37 +7,7 @@ from pygame import time
 from pygame import sprite
 import pyscroll
 from pyscroll.data import TiledMapData
-
-
-# --- Map Helper Functions (Your selected code) ---
-
-def load_map(map_name):
-    """Loads a TMX map and returns a TiledMap object."""
-    with resources.path("projectz.assets", map_name) as map_path:
-        return pytmx.load_pygame(map_path, pixelalpha=True)
-
-
-def get_collision_rects(tiled_map):
-    """
-    Reads the object layer called 'walkable' and returns a list of Pygame Rects.
-    """
-    collision_rects = []
-
-    # 1. Try to find the layer named "walkable" in the map data.
-    try:
-        walkable_layer = tiled_map.get_layer_by_name("walkable")
-    except ValueError:
-        print("Warning: 'walkable' object layer not found in map.")
-        return collision_rects
-
-    # 2. Loop through every object the artist drew on that layer.
-    for obj in walkable_layer:
-        # 3. Create a Pygame Rect object.
-        rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
-        collision_rects.append(rect)
-
-    return collision_rects
-
+from projectz import map
 
 # --- Pygame Setup ---
 pygame.init()
@@ -71,10 +41,21 @@ class Game:
         # For collisions
         self.tiled_map = None
         self.collision_rects = []
+        self.exits = []
 
-    def start(self):
+    def change_map(self, map_name, player_x, player_y):
+        # pyscroll setup
+        self.map_data = None
+        self.map_layer = None
+        self.group = None
+
+        # For collisions
+        self.tiled_map = None
+        self.collision_rects = []
+        self.exits = []
+
         # Load the map data for pyscroll
-        with resources.path("projectz.assets", "map.tmx") as map_path:
+        with resources.path("projectz.assets", map_name) as map_path:
             tmx_map = pytmx.util_pygame.load_pygame(map_path)
             self.map_data = TiledMapData(tmx_map)
 
@@ -91,15 +72,28 @@ class Game:
         except StopIteration:
             print("Warning: 'ground' layer not found. Defaulting player layer to 0.")
             ground_layer_index = 0
+        
+        self.player.pos.x = player_x * 16
+        self.player.pos.y = player_y * 16
 
         # Create the pyscroll group and add the player
         self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=ground_layer_index)
         self.group.add(self.player)
 
-
         # Load the map for collisions
-        self.tiled_map = load_map("map.tmx")
-        self.collision_rects = get_collision_rects(self.tiled_map)
+        self.tiled_map = map.load_map(map_name)
+        self.collision_rects = map.get_collision_rects(self.tiled_map)
+        self.exits = map.get_exit_rects(self.tiled_map)
+
+    def check_exits(self):
+        for exit in self.exits:
+            exit_rect = pygame.Rect(exit.x, exit.y, exit.width, exit.height)
+            if self.player.rect.colliderect(exit_rect):
+                self.change_map(exit.properties["to_map"], exit.properties["to_x"], exit.properties["to_y"])
+                break
+
+    def start(self):
+        self.change_map("map.tmx", 10, 10)
 
         # This while loop is like the Scratch 'forever' block!
         while self.running:
@@ -111,6 +105,7 @@ class Game:
                 self.player.handle_event(pygame_event)
 
             self.player.update(self.collision_rects)
+            self.check_exits()
 
             # Center the map on the player
             self.group.center(self.player.rect.center)
