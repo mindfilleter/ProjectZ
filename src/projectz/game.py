@@ -72,7 +72,6 @@ class Game:
         self.config = config
         self.clock = time.Clock()
         self.running = True
-        self.move_dir = []
         self.player = Player()
 
         # NEW: These will hold our map and the list of collision rectangles!
@@ -96,29 +95,10 @@ class Game:
             for pygame_event in event.get():
                 if pygame_event.type == pygame.QUIT:
                     self.running = False
-
-                if pygame_event.type == pygame.KEYDOWN:
-                    if pygame_event.key == pygame.K_d and "right" not in self.move_dir:
-                        self.move_dir.append("right")
-                    if pygame_event.key == pygame.K_a and "left" not in self.move_dir:
-                        self.move_dir.append("left")
-                    if pygame_event.key == pygame.K_w and "up" not in self.move_dir:
-                        self.move_dir.append("up")
-                    if pygame_event.key == pygame.K_s and "down" not in self.move_dir:
-                        self.move_dir.append("down")
-
-                if pygame_event.type == pygame.KEYUP:
-                    if pygame_event.key == pygame.K_d and "right" in self.move_dir:
-                        self.move_dir.remove("right")
-                    if pygame_event.key == pygame.K_a and "left" in self.move_dir:
-                        self.move_dir.remove("left")
-                    if pygame_event.key == pygame.K_w and "up" in self.move_dir:
-                        self.move_dir.remove("up")
-                    if pygame_event.key == pygame.K_s and "down" in self.move_dir:
-                        self.move_dir.remove("down")
+                self.player.handle_event(pygame_event)
 
             # FIX 3: Now we pass the simple list of collision Rects to the player!
-            self.player.update(self.move_dir, self.collision_rects)
+            self.player.update(self.collision_rects)
 
             # Drawing Step:
             screen.fill((0, 0, 0))
@@ -132,56 +112,73 @@ class Game:
 class Player(sprite.Sprite):
     def __init__(self, *groups):
         sprite.Sprite.__init__(self, *groups)
-        self.x = 16
-        self.y = 16
-        self.vx = 0
-        self.vy = 0
+        self.pos = pygame.math.Vector2(16, 16)
+        self.vel = pygame.math.Vector2(0, 0)
         self.spd = 4
         self.friction = 0.5
-        self.rect = pygame.rect.Rect(self.x, self.y, 16, 16)
+        self.rect = pygame.rect.Rect(self.pos.x, self.pos.y, 16, 16)
+        self.move_dir = []
+
+    def handle_event(self, pygame_event):
+        if pygame_event.type == pygame.KEYDOWN:
+            if pygame_event.key == pygame.K_d and "right" not in self.move_dir:
+                self.move_dir.append("right")
+            if pygame_event.key == pygame.K_a and "left" not in self.move_dir:
+                self.move_dir.append("left")
+            if pygame_event.key == pygame.K_w and "up" not in self.move_dir:
+                self.move_dir.append("up")
+            if pygame_event.key == pygame.K_s and "down" not in self.move_dir:
+                self.move_dir.append("down")
+
+        if pygame_event.type == pygame.KEYUP:
+            if pygame_event.key == pygame.K_d and "right" in self.move_dir:
+                self.move_dir.remove("right")
+            if pygame_event.key == pygame.K_a and "left" in self.move_dir:
+                self.move_dir.remove("left")
+            if pygame_event.key == pygame.K_w and "up" in self.move_dir:
+                self.move_dir.remove("up")
+            if pygame_event.key == pygame.K_s and "down" in self.move_dir:
+                self.move_dir.remove("down")
 
     # We now accept the list of collision rects!
-    def update(self, move_dir, collision_rects):
+    def update(self, collision_rects):
 
         # --- 1. Calculate the change in velocity (vx/vy) ---
-        if "right" in move_dir:
-            self.vx += self.spd
-        if "left" in move_dir:
-            self.vx -= self.spd
-        if "up" in move_dir:
-            self.vy -= self.spd
-        if "down" in move_dir:
-            self.vy += self.spd
+        if "right" in self.move_dir:
+            self.vel.x += self.spd
+        if "left" in self.move_dir:
+            self.vel.x -= self.spd
+        if "up" in self.move_dir:
+            self.vel.y -= self.spd
+        if "down" in self.move_dir:
+            self.vel.y += self.spd
 
         # Apply friction
-        self.vx *= self.friction
-        self.vy *= self.friction
+        self.vel *= self.friction
 
         # --- 2. Move horizontally and check for collisions ---
-        self.rect.x += int(self.vx)  # Move the Rect by the calculated velocity
+        prev_pos = self.pos.copy()
+        self.pos.x += self.vel.x
+        self.rect.x = int(self.pos.x)
 
         # NEW: A quick collision check example!
         for wall in collision_rects:
             # Check if the player's rect has collided with any wall rect
             if self.rect.colliderect(wall):
-                # If they hit a wall, push the player back to where they were!
-                if self.vx > 0:  # If moving right, push left
-                    self.rect.right = wall.left
-                if self.vx < 0:  # If moving left, push right
-                    self.rect.left = wall.right
-                self.vx = 0  # Stop the horizontal movement
+                self.pos.x = prev_pos.x
+                self.rect.x = int(self.pos.x)
+                self.vel.x = 0  # Stop the horizontal movement
 
         # --- 3. Move vertically and check for collisions ---
-        self.rect.y += int(self.vy)
+        self.pos.y += self.vel.y
+        self.rect.y = int(self.pos.y)
 
         # NEW: Vertical collision check
         for wall in collision_rects:
             if self.rect.colliderect(wall):
-                if self.vy > 0:  # If moving down, push up
-                    self.rect.bottom = wall.top
-                if self.vy < 0:  # If moving up, push down
-                    self.rect.top = wall.bottom
-                self.vy = 0  # Stop the vertical movement
+                self.pos.y = prev_pos.y
+                self.rect.y = int(self.pos.y)
+                self.vel.y = 0  # Stop the vertical movement
 
     def draw(self, surface):
         # Draw a red rectangle (our player sprite!)
