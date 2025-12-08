@@ -71,6 +71,18 @@ files = [
 ]
 
 [[package]]
+name = "pyscroll"
+version = "2.31"
+description = "Fast scrolling maps library for pygame"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pyscroll-2.31-py3-none-any.whl", hash = "sha256:b6799df3ec2b937efb142407fdce6af717fe8994c0769e369e9fa977a4d02c06"},
+    {file = "pyscroll-2.31.tar.gz", hash = "sha256:1902051b2084379fc8db699f0a00d26d5d20e68f8dc3c453df5eaf392b2a6c70"},
+]
+
+[[package]]
 name = "pytmx"
 version = "3.32"
 description = "Loads tiled tmx maps"
@@ -113,4 +125,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "74ee1acbbb8ec2fec01776ef26ff0144b58ff6d453462a0a7328df1142fbef9f"
+content-hash = "b2ab7862005c1a8663ce0f5bd2999fe9c05ac1d28c216934176a01681fc7c1f7"

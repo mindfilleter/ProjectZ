@@ -5,32 +5,16 @@ from pygame import display
 from pygame import event
 from pygame import time
 from pygame import sprite
+import pyscroll
+from pyscroll.data import TiledMapData
+
 
 # --- Map Helper Functions (Your selected code) ---
-
 
 def load_map(map_name):
     """Loads a TMX map and returns a TiledMap object."""
     with resources.path("projectz.assets", map_name) as map_path:
         return pytmx.load_pygame(map_path, pixelalpha=True)
-
-
-def render_layer(surface, tiled_map, layer_name):
-    """Renders a specific layer of the TMX map on the given surface."""
-    try:
-        layer = tiled_map.get_layer_by_name(layer_name)
-    except ValueError:
-        print(f"Warning: '{layer_name}' layer not found in map.")
-        return
-
-    if isinstance(layer, pytmx.TiledTileLayer):
-        for x, y, gid in layer:
-            tile = tiled_map.get_tile_image_by_gid(gid)
-            if tile:
-                surface.blit(
-                    tile,
-                    (x * tiled_map.tilewidth, y * tiled_map.tileheight),
-                )
 
 
 def get_collision_rects(tiled_map):
@@ -59,7 +43,7 @@ def get_collision_rects(tiled_map):
 pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
 
 # --- Game Classes ---
 
@@ -72,21 +56,50 @@ class Game:
         self.config = config
         self.clock = time.Clock()
         self.running = True
+
+        # Create the screen and a rendering surface
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.surface = pygame.Surface((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+
+        # pyscroll setup
+        self.map_data = None
+        self.map_layer = None
+        self.group = None
+
         self.player = Player()
 
-        # NEW: These will hold our map and the list of collision rectangles!
+        # For collisions
         self.tiled_map = None
         self.collision_rects = []
 
     def start(self):
+        # Load the map data for pyscroll
+        with resources.path("projectz.assets", "map.tmx") as map_path:
+            tmx_map = pytmx.util_pygame.load_pygame(map_path)
+            self.map_data = TiledMapData(tmx_map)
 
-        # FIX 1: Load the map ONCE and store the correct PyTMX object in self.tiled_map
+        # Create the map layer (renderer)
+        self.map_layer = pyscroll.BufferedRenderer(self.map_data, self.surface.get_size())
+
+        # Find the index of the 'ground' layer from the visible tile layers.
+        # This will be used to correctly layer the player sprite.
+        try:
+            ground_layer_index = next(
+                i for i, layer in enumerate(tmx_map.visible_layers)
+                if isinstance(layer, pytmx.TiledTileLayer) and layer.name == 'ground'
+            )
+        except StopIteration:
+            print("Warning: 'ground' layer not found. Defaulting player layer to 0.")
+            ground_layer_index = 0
+
+        # Create the pyscroll group and add the player
+        self.group = pyscroll.PyscrollGroup(map_layer=self.map_layer, default_layer=ground_layer_index)
+        self.group.add(self.player)
+
+
+        # Load the map for collisions
         self.tiled_map = load_map("map.tmx")
-
-        # FIX 2: Generate the list of collision rects ONCE from the correct map object
         self.collision_rects = get_collision_rects(self.tiled_map)
-
-        screen = display.get_surface()
 
         # This while loop is like the Scratch 'forever' block!
         while self.running:
@@ -97,27 +110,41 @@ class Game:
                     self.running = False
                 self.player.handle_event(pygame_event)
 
-            # FIX 3: Now we pass the simple list of collision Rects to the player!
             self.player.update(self.collision_rects)
 
+            # Center the map on the player
+            self.group.center(self.player.rect.center)
+
             # Drawing Step:
-            screen.fill((0, 0, 0))
-            # Use the stored map object for rendering
-            render_layer(screen, self.tiled_map, "ground")
-            self.player.draw(screen)
-            render_layer(screen, self.tiled_map, "foreground")
+            self.surface.fill((0, 0, 0))
+            self.group.draw(self.surface)
+
+            # Scale the rendering surface to the screen
+            pygame.transform.scale(self.surface, self.screen.get_size(), self.screen)
             pygame.display.flip()
 
 
 class Player(sprite.Sprite):
     def __init__(self, *groups):
-        sprite.Sprite.__init__(self, *groups)
+        super().__init__(*groups)
         self.pos = pygame.math.Vector2(16, 16)
         self.vel = pygame.math.Vector2(0, 0)
         self.spd = 4
         self.friction = 0.5
         self.rect = pygame.rect.Rect(self.pos.x, self.pos.y, 16, 16)
         self.move_dir = []
+
+        # Load the spritesheet
+        with resources.path("projectz.assets", "player.png") as sheet_path:
+            spritesheet = pygame.image.load(sheet_path).convert_alpha()
+
+        # Define the area of the single frame to grab
+        frame_rect = pygame.Rect(32, 0, 16, 16)  # 3rd frame, 1st row
+
+        # Create a new surface with just the frame we want
+        self.image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
+        self.image.blit(spritesheet, (0, 0), frame_rect)
+
 
     def handle_event(self, pygame_event):
         if pygame_event.type == pygame.KEYDOWN:
@@ -181,5 +208,7 @@ class Player(sprite.Sprite):
                 self.vel.y = 0  # Stop the vertical movement
 
     def draw(self, surface):
-        # Draw a red rectangle (our player sprite!)
-        pygame.draw.rect(surface, (255, 0, 0), self.rect)
+        # Pyscroll handles drawing the sprite's image at its rect.
+        # We just need to have a self.image and self.rect.
+        # The red rectangle is now created in __init__ as self.image
+        pass
