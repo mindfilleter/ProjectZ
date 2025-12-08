@@ -15,17 +15,22 @@ def load_map(map_name):
         return pytmx.load_pygame(map_path, pixelalpha=True)
 
 
-def render_map(surface, tiled_map):
-    """Renders the TMX map on the given surface."""
-    for layer in tiled_map.visible_layers:
-        if isinstance(layer, pytmx.TiledTileLayer):
-            for x, y, gid in layer:
-                tile = tiled_map.get_tile_image_by_gid(gid)
-                if tile:
-                    surface.blit(
-                        tile,
-                        (x * tiled_map.tilewidth, y * tiled_map.tileheight),
-                    )
+def render_layer(surface, tiled_map, layer_name):
+    """Renders a specific layer of the TMX map on the given surface."""
+    try:
+        layer = tiled_map.get_layer_by_name(layer_name)
+    except ValueError:
+        print(f"Warning: '{layer_name}' layer not found in map.")
+        return
+
+    if isinstance(layer, pytmx.TiledTileLayer):
+        for x, y, gid in layer:
+            tile = tiled_map.get_tile_image_by_gid(gid)
+            if tile:
+                surface.blit(
+                    tile,
+                    (x * tiled_map.tilewidth, y * tiled_map.tileheight),
+                )
 
 
 def get_collision_rects(tiled_map):
@@ -118,8 +123,9 @@ class Game:
             # Drawing Step:
             screen.fill((0, 0, 0))
             # Use the stored map object for rendering
-            render_map(screen, self.tiled_map)
+            render_layer(screen, self.tiled_map, "ground")
             self.player.draw(screen)
+            render_layer(screen, self.tiled_map, "foreground")
             pygame.display.flip()
 
 

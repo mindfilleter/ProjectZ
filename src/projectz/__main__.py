@@ -16,3 +16,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+class Player(sprite.Sprite):
+
+    def __init__(self, *groups):
+        sprite.Sprite.__init__(self, *groups)
