@@ -15,6 +15,7 @@ def init_pygame():
         The screen surface.
     """
     pygame.init()
+    pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.KEYUP])
 
     screen_width = config.getint("screen", "width")
     screen_height = config.getint("screen", "height")

@@ -164,6 +164,13 @@ class Player(sprite.Sprite):
         self.image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
         self.image.blit(spritesheet, (0, 0), frame_rect)
 
+    KEY_DIRECTION_MAP = {
+        pygame.K_d: "right",
+        pygame.K_a: "left",
+        pygame.K_w: "up",
+        pygame.K_s: "down",
+    }
+
     def handle_event(self, pygame_event):
         """
         Handles a pygame event.
@@ -171,25 +178,19 @@ class Player(sprite.Sprite):
         Args:
             pygame_event: The event to handle.
         """
-        if pygame_event.type == pygame.KEYDOWN:
-            if pygame_event.key == pygame.K_d and "right" not in self.move_dir:
-                self.move_dir.append("right")
-            if pygame_event.key == pygame.K_a and "left" not in self.move_dir:
-                self.move_dir.append("left")
-            if pygame_event.key == pygame.K_w and "up" not in self.move_dir:
-                self.move_dir.append("up")
-            if pygame_event.key == pygame.K_s and "down" not in self.move_dir:
-                self.move_dir.append("down")
+        if pygame_event.type not in (pygame.KEYDOWN, pygame.KEYUP):
+            return
 
-        if pygame_event.type == pygame.KEYUP:
-            if pygame_event.key == pygame.K_d and "right" in self.move_dir:
-                self.move_dir.remove("right")
-            if pygame_event.key == pygame.K_a and "left" in self.move_dir:
-                self.move_dir.remove("left")
-            if pygame_event.key == pygame.K_w and "up" in self.move_dir:
-                self.move_dir.remove("up")
-            if pygame_event.key == pygame.K_s and "down" in self.move_dir:
-                self.move_dir.remove("down")
+        direction = self.KEY_DIRECTION_MAP.get(pygame_event.key)
+        if not direction:
+            return
+
+        if pygame_event.type == pygame.KEYDOWN:
+            if direction not in self.move_dir:
+                self.move_dir.append(direction)
+        elif pygame_event.type == pygame.KEYUP:
+            if direction in self.move_dir:
+                self.move_dir.remove(direction)
 
     def update(self, collision_rects):
         """
