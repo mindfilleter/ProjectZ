@@ -24,13 +24,11 @@ class Game:
     """
 
     TARGET_FPS = 60
+    TILE_SIZE = 16
 
     def __init__(self, config):
         """
         Initializes the game.
-
-        Args:
-            config: The game configuration.
         """
         self.config = config
         self.clock = time.Clock()
@@ -43,29 +41,33 @@ class Game:
         self.map_layer = None
         self.group = None
 
-        self.player = Player()
+        self.player = Player(self.TILE_SIZE)
 
         self.tiled_map = None
         self.collision_rects = []
         self.exits = []
 
-    def change_map(self, map_name, player_x, player_y):
+    def _reset_map_state(self):
         """
-        Changes the current map.
-
-        Args:
-            map_name: The name of the map to load.
-            player_x: The player's starting x position.
-            player_y: The player's starting y position.
+        Resets the map-related attributes.
         """
         self.map_data = None
         self.map_layer = None
         self.group = None
-
         self.tiled_map = None
         self.collision_rects = []
         self.exits = []
 
+    def _load_map_visuals(self, map_name):
+        """
+        Loads the visual components of the map.
+
+        Args:
+            map_name: The name of the map to load.
+
+        Returns:
+            A tuple containing the tmx_map and map_layer.
+        """
         with resources.path("projectz.assets", map_name) as map_path:
             tmx_map = pytmx.util_pygame.load_pygame(map_path)
             self.map_data = TiledMapData(tmx_map)
@@ -73,7 +75,18 @@ class Game:
         self.map_layer = pyscroll.BufferedRenderer(
             self.map_data, self.surface.get_size()
         )
+        return tmx_map, self.map_layer
 
+    def _setup_player_and_group(self, tmx_map, map_layer, player_x, player_y):
+        """
+        Sets up the player and the sprite group.
+
+        Args:
+            tmx_map: The loaded tmx map.
+            map_layer: The rendered map layer.
+            player_x: The player's starting x position.
+            player_y: The player's starting y position.
+        """
         try:
             ground_layer_index = next(
                 i
@@ -84,17 +97,48 @@ class Game:
             print("Warning: 'ground' layer not found. Defaulting player layer to 0.")
             ground_layer_index = 0
 
-        self.player.pos.x = player_x * 16
-        self.player.pos.y = player_y * 16
+        if player_x is not None and player_y is not None:
+            self.player.pos.x = player_x * self.TILE_SIZE
+            self.player.pos.y = player_y * self.TILE_SIZE
+        else:
+            player_start = tmx_map.get_object_by_name("player_start")
+            if player_start:
+                self.player.pos.x = player_start.x
+                self.player.pos.y = player_start.y
+            else:
+                # Default fallback if no start position is found
+                self.player.pos.x = 10 * self.TILE_SIZE
+                self.player.pos.y = 10 * self.TILE_SIZE
 
         self.group = pyscroll.PyscrollGroup(
-            map_layer=self.map_layer, default_layer=ground_layer_index
+            map_layer=map_layer, default_layer=ground_layer_index
         )
         self.group.add(self.player)
 
+    def _load_map_objects(self, map_name):
+        """
+        Loads the map's collision and exit objects.
+
+        Args:
+            map_name: The name of the map to load.
+        """
         self.tiled_map = map.load_map(map_name)
         self.collision_rects = map.get_collision_rects(self.tiled_map)
         self.exits = map.get_exit_rects(self.tiled_map)
+
+    def change_map(self, map_name, player_x=None, player_y=None):
+        """
+        Changes the current map.
+
+        Args:
+            map_name: The name of the map to load.
+            player_x: The player's starting x position.
+            player_y: The player's starting y position.
+        """
+        self._reset_map_state()
+        tmx_map, map_layer = self._load_map_visuals(map_name)
+        self._setup_player_and_group(tmx_map, map_layer, player_x, player_y)
+        self._load_map_objects(map_name)
 
     def check_exits(self):
         """
@@ -105,8 +149,8 @@ class Game:
             if self.player.rect.colliderect(exit_rect):
                 self.change_map(
                     exit.properties["to_map"],
-                    exit.properties["to_x"],
-                    exit.properties["to_y"],
+                    int(exit.properties["to_x"]),
+                    int(exit.properties["to_y"]),
                 )
                 break
 
@@ -114,7 +158,7 @@ class Game:
         """
         Starts the game loop.
         """
-        self.change_map("map.tmx", 10, 10)
+        self.change_map("map.tmx")
 
         while self.running:
             self.clock.tick(Game.TARGET_FPS)
@@ -141,7 +185,7 @@ class Player(sprite.Sprite):
     Represents the player character.
     """
 
-    def __init__(self, *groups):
+    def __init__(self, tile_size, *groups):
         """
         Initializes the player.
 
@@ -149,17 +193,17 @@ class Player(sprite.Sprite):
             *groups: The sprite groups to add the player to.
         """
         super().__init__(*groups)
-        self.pos = pygame.math.Vector2(16, 16)
+        self.pos = pygame.math.Vector2(tile_size, tile_size)
         self.vel = pygame.math.Vector2(0, 0)
         self.spd = 4
         self.friction = 0.5
-        self.rect = pygame.rect.Rect(self.pos.x, self.pos.y, 16, 16)
+        self.rect = pygame.rect.Rect(self.pos.x, self.pos.y, tile_size, tile_size)
         self.move_dir = []
 
         with resources.path("projectz.assets", "player.png") as sheet_path:
             spritesheet = pygame.image.load(sheet_path).convert_alpha()
 
-        frame_rect = pygame.Rect(32, 0, 16, 16)
+        frame_rect = pygame.Rect(32, 0, tile_size, tile_size)
 
         self.image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
         self.image.blit(spritesheet, (0, 0), frame_rect)

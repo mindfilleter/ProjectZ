@@ -94,6 +94,9 @@
    </properties>
   </object>
  </objectgroup>
+ <objectgroup id="5" name="objects">
+  <object id="32" name="player_start" x="160" y="160" width="16" height="16"/>
+ </objectgroup>
  <objectgroup id="2" name="walkable">
   <object id="1" x="0" y="0" width="800" height="16"/>
   <object id="2" x="416" y="-128" rotation="90"/>
