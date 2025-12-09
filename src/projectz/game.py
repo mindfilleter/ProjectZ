@@ -230,6 +230,7 @@ class Game:
 
             # This is how the enemies are added to the group for drawing/updating!
             enemy_group.add(new_object)
+            self.group.add(new_object)
 
     def start(self):
         """
