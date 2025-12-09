@@ -5,6 +5,7 @@ This module contains the primary game logic and classes.
 from importlib import resources
 import pytmx
 import pygame
+import math
 from pygame import event
 from pygame import time
 from pygame import sprite
@@ -195,8 +196,8 @@ class Player(sprite.Sprite):
         super().__init__(*groups)
         self.pos = pygame.math.Vector2(tile_size, tile_size)
         self.vel = pygame.math.Vector2(0, 0)
-        self.spd = 4
-        self.friction = 0.5
+        self.spd = 1
+        self.friction = 0.7
         self.rect = pygame.rect.Rect(self.pos.x, self.pos.y, tile_size, tile_size)
         self.move_dir = []
 
@@ -281,3 +282,33 @@ class Player(sprite.Sprite):
             surface: The surface to draw the player on.
         """
         pass
+
+
+class Enemy(
+    sprite.Sprite
+):  # FIX: Changed 'sprite.sprite' to 'sprite.Sprite' (capital S)
+    def __init__(self, x, y, type, player):
+        self.x = x
+        self.y = y
+        self.type = type
+        self.dir = 0
+        self.spd = 0.5
+        self.friction = 0.5
+        self.rect = pygame.rect.Rect(self.x, self.y, 16, 16)
+        # FIX: Store the player object so the update function can use it
+        self.player = player
+
+    def update(self):
+        # FIX: Use self.player instead of the local variable 'player'
+        self.dx = self.x - self.player.x
+        self.dy = self.y - self.player.y
+
+        self.dir = math.atan2(self.dx, self.dy)
+
+        self.x += math.cos(self.dir) * self.spd
+        self.y += math.sin(self.dir) * self.spd
+
+        self.rect.center = (self.x, self.y)
+
+    def draw(self, screen):
+        pygame.draw.circle(screen, (255, 0, 0), self.rect.center, 8)
