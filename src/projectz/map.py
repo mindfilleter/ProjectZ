@@ -69,3 +69,26 @@ def get_exit_rects(tiled_map):
         exits.append(obj)
 
     return exits
+
+
+def get_enemy_spawn_points(tiled_map):
+    """
+    Gets the enemy spawn points from a Tiled map.
+
+    Args:
+        tiled_map: The TiledMap object to get the enemy spawn points from.
+
+    Returns:
+        A list of Tiled objects.
+    """
+    spawns = []
+
+    try:
+        enemy_layer = tiled_map.get_layer_by_name("enemies")
+    except ValueError:
+        return spawns
+
+    for obj in enemy_layer:
+        spawns.append(obj)
+
+    return spawns

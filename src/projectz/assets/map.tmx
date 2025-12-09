@@ -116,4 +116,8 @@
   <object id="30" x="176" y="112" width="32" height="64"/>
   <object id="31" x="144" y="112" width="32" height="48"/>
  </objectgroup>
+ <objectgroup id="6" name="enemies">
+  <object id="33" name="enemy_spawn" x="80" y="128" width="16" height="16"/>
+  <object id="34" name="enemy_spawn" x="500" y="400" width="16" height="16"/>
+ </objectgroup>
 </map>
