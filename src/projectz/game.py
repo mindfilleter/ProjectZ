@@ -20,6 +20,13 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
 
+# --- GLOBAL SPRITE GROUPS ---
+# We keep these outside the class so they are easy to access
+player_group = pygame.sprite.Group()
+enemy_group = pygame.sprite.Group()
+# ----------------------------
+
+
 class Game:
     """
     Represents the main game loop and state.
@@ -43,17 +50,14 @@ class Game:
         self.map_layer = None
         self.group = None  # This is the PyscrollGroup for map and player
 
-        # --- Sprite Groups ---
-        self.player_group = pygame.sprite.Group()
-        self.enemy_group = pygame.sprite.Group()
-
         self.player = Player(self.TILE_SIZE)
-        self.player_group.add(self.player)  # Player is added to its own group
+        player_group.add(self.player)  # Player is added to its own group
 
         self.tiled_map = None
         self.collision_rects = []
         self.exits = []
-        self.enemy_spawns = []
+
+        self.enemys_to_spawn = 2
 
     def _reset_map_state(self):
         """
@@ -65,10 +69,9 @@ class Game:
         self.tiled_map = None
         self.collision_rects = []
         self.exits = []
-        self.enemy_spawns = []
 
         # Clear all enemies when changing maps!
-        self.enemy_group.empty()
+        enemy_group.empty()
 
     def _load_map_visuals(self, map_name):
         """
@@ -156,11 +159,9 @@ class Game:
         if self.tiled_map is not None:
             self.collision_rects = map.get_collision_rects(self.tiled_map)
             self.exits = map.get_exit_rects(self.tiled_map)
-            self.enemy_spawns = map.get_enemy_spawn_points(self.tiled_map)
         else:
             self.collision_rects = []
             self.exits = []
-            self.enemy_spawns = []
 
     def change_map(self, map_name, player_x=None, player_y=None):
         """
@@ -208,13 +209,27 @@ class Game:
                         f"Warning: Exit object {exit.name} is missing 'to_map', 'to_x', or 'to_y' properties."
                     )
 
-    def enemy_spawn_logic(self):
+    def enemy_spawn_logic(self):  # Removed parameters and used self attributes
         """
-        Spawns enemies based on the spawn points defined in the map.
+        Spawns enemies randomly and adds them to the enemy_group.
         """
-        for spawn in self.enemy_spawns:
-            new_object = Enemy(spawn.x, spawn.y, "red slime", self.player)
-            self.enemy_group.add(new_object)
+        for i in range(self.enemys_to_spawn):
+            # Spawn enemies near the player's current location,
+            # but away from the center of the screen
+            spawn_x = self.player.rect.x + random.randint(-200, 200)
+            spawn_y = self.player.rect.y + random.randint(-200, 200)
+
+            # Ensure enemies are spawned within the current map boundaries
+            if self.tiled_map:
+                map_width = self.tiled_map.width * self.tiled_map.tilewidth
+                map_height = self.tiled_map.height * self.tiled_map.tileheight
+                spawn_x = max(0, min(spawn_x, map_width - 16))  # 16 is enemy width
+                spawn_y = max(0, min(spawn_y, map_height - 16))  # 16 is enemy height
+
+            new_object = Enemy(spawn_x, spawn_y, "red slime", self.player)
+
+            # This is how the enemies are added to the group for drawing/updating!
+            enemy_group.add(new_object)
             self.group.add(new_object)
 
     def start(self):
@@ -236,7 +251,7 @@ class Game:
 
             # FIX 1: You must call .update() on the enemy_group to make enemies move!
             # The *args passed here will go to the Enemy.update method.
-            self.enemy_group.update(self.collision_rects)
+            enemy_group.update(self.collision_rects)
 
             self.check_exits()
 
@@ -380,8 +395,8 @@ class Enemy(sprite.Sprite):
         self.y = float(y)
         self.type = type
         self.dir = 0
-        self.spd = 0.5
-        self.friction = 0.5
+        self.spd = 5
+        self.friction = 5
 
         # 3. The 'rect' is used for positioning and collision checking.
         self.rect = self.image.get_rect(topleft=(int(self.x), int(self.y)))
@@ -392,15 +407,20 @@ class Enemy(sprite.Sprite):
 
         # Calculate the distance and direction to the player
         # We target the player's center for smooth tracking
-        self.dx = (
-            self.player.rect.centerx - self.x
-        )  # Calculate difference (Player - Enemy)
-        self.dy = (
-            self.player.rect.centery - self.y
-        )  # Calculate difference (Player - Enemy)
 
-        # Calculate the angle (in radians) to the player
-        self.dir = math.atan2(self.dy, self.dx)
+        if self.spd <= 0.01:
+            self.spd = 2
+            self.dx = (
+                self.player.rect.centerx - self.x
+            )  # Calculate difference (Player - Enemy)
+            self.dy = (
+                self.player.rect.centery - self.y
+            )  # Calculate difference (Player - Enemy)
+
+            # Calculate the angle (in radians) to the player
+            self.dir = math.atan2(self.dy, self.dx)
+        else:
+            self.spd -= 0.05
 
         # Calculate new position based on speed and direction
         new_x = self.x + math.cos(self.dir) * self.spd
