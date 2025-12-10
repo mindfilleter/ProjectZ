@@ -20,13 +20,6 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
 
-# --- GLOBAL SPRITE GROUPS ---
-# We keep these outside the class so they are easy to access
-player_group = pygame.sprite.Group()
-enemy_group = pygame.sprite.Group()
-# ----------------------------
-
-
 class Game:
     """
     Represents the main game loop and state.
@@ -50,14 +43,17 @@ class Game:
         self.map_layer = None
         self.group = None  # This is the PyscrollGroup for map and player
 
+        # --- Sprite Groups ---
+        self.player_group = pygame.sprite.Group()
+        self.enemy_group = pygame.sprite.Group()
+
         self.player = Player(self.TILE_SIZE)
-        player_group.add(self.player)  # Player is added to its own group
+        self.player_group.add(self.player)  # Player is added to its own group
 
         self.tiled_map = None
         self.collision_rects = []
         self.exits = []
-
-        self.enemys_to_spawn = 2
+        self.enemy_spawns = []
 
     def _reset_map_state(self):
         """
@@ -69,9 +65,10 @@ class Game:
         self.tiled_map = None
         self.collision_rects = []
         self.exits = []
+        self.enemy_spawns = []
 
         # Clear all enemies when changing maps!
-        enemy_group.empty()
+        self.enemy_group.empty()
 
     def _load_map_visuals(self, map_name):
         """
@@ -159,9 +156,11 @@ class Game:
         if self.tiled_map is not None:
             self.collision_rects = map.get_collision_rects(self.tiled_map)
             self.exits = map.get_exit_rects(self.tiled_map)
+            self.enemy_spawns = map.get_enemy_spawn_points(self.tiled_map)
         else:
             self.collision_rects = []
             self.exits = []
+            self.enemy_spawns = []
 
     def change_map(self, map_name, player_x=None, player_y=None):
         """
@@ -209,27 +208,13 @@ class Game:
                         f"Warning: Exit object {exit.name} is missing 'to_map', 'to_x', or 'to_y' properties."
                     )
 
-    def enemy_spawn_logic(self):  # Removed parameters and used self attributes
+    def enemy_spawn_logic(self):
         """
-        Spawns enemies randomly and adds them to the enemy_group.
+        Spawns enemies based on the spawn points defined in the map.
         """
-        for i in range(self.enemys_to_spawn):
-            # Spawn enemies near the player's current location,
-            # but away from the center of the screen
-            spawn_x = self.player.rect.x + random.randint(-200, 200)
-            spawn_y = self.player.rect.y + random.randint(-200, 200)
-
-            # Ensure enemies are spawned within the current map boundaries
-            if self.tiled_map:
-                map_width = self.tiled_map.width * self.tiled_map.tilewidth
-                map_height = self.tiled_map.height * self.tiled_map.tileheight
-                spawn_x = max(0, min(spawn_x, map_width - 16))  # 16 is enemy width
-                spawn_y = max(0, min(spawn_y, map_height - 16))  # 16 is enemy height
-
-            new_object = Enemy(spawn_x, spawn_y, "red slime", self.player)
-
-            # This is how the enemies are added to the group for drawing/updating!
-            enemy_group.add(new_object)
+        for spawn in self.enemy_spawns:
+            new_object = Enemy(spawn.x, spawn.y, "red slime", self.player)
+            self.enemy_group.add(new_object)
             self.group.add(new_object)
 
     def start(self):
@@ -251,7 +236,7 @@ class Game:
 
             # FIX 1: You must call .update() on the enemy_group to make enemies move!
             # The *args passed here will go to the Enemy.update method.
-            enemy_group.update(self.collision_rects)
+            self.enemy_group.update(self.collision_rects)
 
             self.check_exits()
 
