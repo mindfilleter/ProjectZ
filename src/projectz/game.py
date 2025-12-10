@@ -213,7 +213,8 @@ class Game:
         Spawns enemies based on the spawn points defined in the map.
         """
         for spawn in self.enemy_spawns:
-            new_object = Enemy(spawn.x, spawn.y, "red slime", self.player)
+            slime_type = spawn.properties.get("slime_type", "red")
+            new_object = Enemy(spawn.x, spawn.y, slime_type, self.player)
             self.enemy_group.add(new_object)
             self.group.add(new_object)
 
@@ -372,8 +373,32 @@ class Enemy(sprite.Sprite):
         super().__init__()
 
         # 2. Set the 'Costume' (the image) for the sprite.
-        self.image = pygame.Surface((16, 16)).convert_alpha()
-        self.image.fill((200, 50, 50))  # A dark red enemy!
+        try:
+            with resources.path("projectz.assets", "slimes.png") as sheet_path:
+                spritesheet = pygame.image.load(sheet_path).convert_alpha()
+        except FileNotFoundError:
+            print("Error: slimes.png not found. Using red square placeholder.")
+            spritesheet = pygame.Surface((16, 16), pygame.SRCALPHA)
+            spritesheet.fill((200, 50, 50))
+
+        # Define slime positions on the spritesheet
+        slime_positions = {
+            "red": (0, 0),  # x, y of the first frame
+            "blue": (0, 16),
+            "green": (0, 32),
+        }
+
+        # Default to red if type is unknown
+        slime_type_key = type.split(" ")[0]  # in case of "red slime"
+        if slime_type_key not in slime_positions:
+            slime_type_key = "red"
+
+        start_x, start_y = slime_positions[slime_type_key]
+
+        # For now, we only use the first frame of the animation
+        frame_rect = pygame.Rect(start_x, start_y, 16, 16)
+        self.image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
+        self.image.blit(spritesheet, (0, 0), frame_rect)
 
         # Use floating point numbers for smooth movement
         self.x = float(x)
