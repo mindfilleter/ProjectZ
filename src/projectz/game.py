@@ -237,7 +237,7 @@ class Game:
 
             # FIX 1: You must call .update() on the enemy_group to make enemies move!
             # The *args passed here will go to the Enemy.update method.
-            self.enemy_group.update(self.collision_rects)
+            self.enemy_group.update(self.collision_rects, self.enemy_group)
 
             self.check_exits()
 
@@ -411,9 +411,14 @@ class Enemy(sprite.Sprite):
         # 3. The 'rect' is used for positioning and collision checking.
         self.rect = self.image.get_rect(topleft=(int(self.x), int(self.y)))
 
+        self.sensor_image = pygame.Surface((4, 16))
+        self.sensor_rect = self.sensor_image.get_rect(
+            topleft=(int(self.x), int(self.y))
+        )
+
         self.player = player  # Store the player so we can chase them
 
-    def update(self, collision_rects):
+    def update(self, collision_rects, enemy_group):
 
         # Calculate the distance and direction to the player
         # We target the player's center for smooth tracking
@@ -431,6 +436,10 @@ class Enemy(sprite.Sprite):
             self.dir = math.atan2(self.dy, self.dx)
         else:
             self.spd -= 0.05
+
+        self.sensor_rect.x = self.x + math.cos(self.dir) + 12
+        self.sensor_rect.y = self.y + math.sin(self.dir) + 12
+        self.sensor_image = pygame.transform.rotate(self.sensor_image, self.dir)
 
         # Calculate new position based on speed and direction
         new_x = self.x + math.cos(self.dir) * self.spd
@@ -461,3 +470,13 @@ class Enemy(sprite.Sprite):
                 self.y = prev_y  # If it hits, move back
                 self.rect.y = int(self.y)
                 break  # Stop checking walls
+        for enemy in enemy_group:
+            # FIX A: Crucial check to ensure we don't check collision with ourselves
+            if enemy is self:
+                continue
+
+            # The enemy.rect is available and functional here because 'enemy' is an instance of 'Enemy' class.
+            if self.sensor_rect.colliderect(enemy.rect):
+                self.sensor_rect.x = self.x - math.cos(self.dir) + 12
+                self.sensor_rect.y = self.y - math.sin(self.dir) + 12
+                self.sensor_image = pygame.transform.rotate(self.sensor_image, self.dir)
