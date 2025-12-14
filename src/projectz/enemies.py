@@ -3,6 +3,7 @@ import pygame
 from importlib import resources
 from pygame import sprite
 
+
 class Enemy(sprite.Sprite):
     def __init__(self, x, y, type, player):
         # 1. Initialize the base Sprite class

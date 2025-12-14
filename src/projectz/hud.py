@@ -22,7 +22,7 @@ class HealthBar(sprite.Sprite):
 
     def update(self):
         display_surface = display.get_surface()
-        
+
         if self.image is None:
             self.image = pygame.Surface(self._calculate_size(), pygame.SRCALPHA)
 
@@ -38,7 +38,7 @@ class HealthBar(sprite.Sprite):
             draw.rect(self.image, "black", stencil)
             draw.rect(self.image, HealthBar.COLOR, stencil.inflate(-2, -2))
             stencil.move_ip(HealthBar.BAR_WIDTH + HealthBar.BAR_SEPARATOR_WIDTH, 0)
-            
+
     def _calculate_size(self):
         separator_padding = (
             HealthBar.BAR_SEPARATOR_WIDTH

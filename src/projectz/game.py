@@ -42,16 +42,13 @@ class GameState(abc.ABC):
         self.game = game
 
     @abc.abstractmethod
-    def handle_input(self, pygame_event):
-        ...
+    def handle_input(self, pygame_event): ...
 
     @abc.abstractmethod
-    def update(self):
-        ...
+    def update(self): ...
 
     @abc.abstractmethod
-    def draw(self):
-        ...
+    def draw(self): ...
 
 
 class MapState(GameState):
@@ -128,8 +125,7 @@ class ExploringState(GameState):
             self.game.group.draw(self.game.surface)
         self.game.hud.draw(self.game.surface)
 
-    
-    
+
 class Game:
     """
     Represents the main game loop and state.
