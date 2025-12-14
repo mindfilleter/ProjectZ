@@ -2,21 +2,27 @@
 This module contains the primary game logic and classes.
 """
 
+# Python Standard Library Dependencies
+import abc
 from importlib import resources
-import pytmx
-import pygame
+import enum
 import math
 import random
-import enum
+
+# 3rd Party Dependencies
 from pygame import event
-from pygame import time
 from pygame import sprite
-import pyscroll
+from pygame import time
 from pyscroll.data import TiledMapData
+import pygame
+import pyscroll
+import pytmx
+
+# Module Dependencies
 from projectz import map
-from projectz.player import Player
 from projectz.enemies import Enemy
 from projectz.hud import HUD
+from projectz.player import Player
 
 
 pygame.init()
@@ -31,6 +37,94 @@ class GameStates(enum.Enum):
     Inventory = "Inventory"
 
 
+class GameState(abc.ABC):
+    def __init__(self, game):
+        self.game = game
+
+    @abc.abstractmethod
+    def handle_input(self, pygame_event):
+        ...
+
+    @abc.abstractmethod
+    def update(self):
+        ...
+
+    @abc.abstractmethod
+    def draw(self):
+        ...
+
+
+class MapState(GameState):
+    def __init__(self, game):
+        super().__init__(game)
+
+    def handle_input(self, pygame_event):
+        pass
+
+    def update(self):
+        pass
+
+    def draw(self):
+        pass
+
+
+class PausedState(GameState):
+    def __init__(self, game):
+        super().__init__(game)
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render("Paused", True, (255, 255, 255))
+        self.text_rect = self.text.get_rect(
+            center=(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 4)
+        )
+
+    def handle_input(self, pygame_event):
+        pass
+
+    def update(self):
+        pass
+
+    def draw(self):
+        self.game.game_states[GameStates.Exploring].draw()
+        self.game.surface.blit(self.text, self.text_rect)
+
+
+class InventoryState(GameState):
+    def __init__(self, game):
+        super().__init__(game)
+
+    def handle_input(self, pygame_event):
+        pass
+
+    def update(self):
+        pass
+
+    def draw(self):
+        pass
+
+
+class ExploringState(GameState):
+    def __init__(self, game):
+        super().__init__(game)
+
+    def handle_input(self, pygame_event):
+        self.game.player.handle_event(pygame_event)
+
+    def update(self):
+        self.game.player.update(self.game.collision_rects)
+        self.game.hud.update()
+        self.game.enemy_group.update(self.game.collision_rects)
+        self.game.check_exits()
+        if self.game.group:
+            self.game.group.center(self.game.player.rect.center)
+
+    def draw(self):
+        self.game.surface.fill((0, 0, 0))
+        if self.game.group:
+            self.game.group.draw(self.game.surface)
+        self.game.hud.draw(self.game.surface)
+
+    
+    
 class Game:
     """
     Represents the main game loop and state.
@@ -47,6 +141,12 @@ class Game:
         self.clock = time.Clock()
         self.running = True
         self.state = GameStates.Exploring
+        self.game_states = {
+            GameStates.Map: MapState(self),
+            GameStates.Paused: PausedState(self),
+            GameStates.Exploring: ExploringState(self),
+            GameStates.Inventory: InventoryState(self),
+        }
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.surface = pygame.Surface((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
@@ -245,38 +345,15 @@ class Game:
                     self.running = False
                 elif pygame_event.type == pygame.KEYDOWN:
                     if pygame_event.key == pygame.K_p:
-
                         if self.state == GameStates.Paused:
                             self.state = GameStates.Exploring
                         else:
                             self.state = GameStates.Paused
 
-                if self.state == GameStates.Paused:
-                    return
-                self.player.handle_event(pygame_event)
+                self.game_states[self.state].handle_input(pygame_event)
 
-            # --- UPDATE STEP (Movement) ---
-            self.player.update(self.collision_rects)
-            self.hud.update()
-
-            # FIX 1: You must call .update() on the enemy_group to make enemies move!
-            # The *args passed here will go to the Enemy.update method.
-            self.enemy_group.update(self.collision_rects)
-
-            self.check_exits()
-
-            # Ensure the group exists before centering
-            if self.group:
-                self.group.center(self.player.rect.center)
-
-            # --- DRAW STEP (Rendering) ---
-            self.surface.fill((0, 0, 0))
-
-            # This draws the map tiles and the player (if group exists)
-            if self.group:
-                self.group.draw(self.surface)
-
-            self.hud.draw(self.surface)
+            self.game_states[self.state].update()
+            self.game_states[self.state].draw()
 
             pygame.transform.scale(self.surface, self.screen.get_size(), self.screen)
             pygame.display.flip()
