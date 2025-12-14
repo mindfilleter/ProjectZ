@@ -82,3 +82,6 @@ venv.bak/
 # PyCharm
 .idea/
 desktop.ini
+
+# Editor Backups
+.#*
