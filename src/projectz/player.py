@@ -2,7 +2,13 @@ import pygame
 from pygame import sprite
 from pygame import rect
 from importlib import resources
+from typing import Set
 import pygame.math
+import enum
+
+
+class KeyItems(enum.Enum):
+    Sword = "Sword"
 
 
 class Player(sprite.Sprite):
@@ -28,6 +34,7 @@ class Player(sprite.Sprite):
         # Rect for drawing and collision (must be integer coordinates)
         self.rect = pygame.rect.Rect(self.pos.x, self.pos.y, tile_size, tile_size)
         self.move_dir = []
+        self.inventory: Set[KeyItems] = set([])
 
         try:
             with resources.path("projectz.assets", "player.png") as sheet_path:
@@ -42,6 +49,9 @@ class Player(sprite.Sprite):
 
         self.image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
         self.image.blit(spritesheet, (0, 0), frame_rect)
+
+    def give_item(self, key_item: KeyItems):
+        self.inventory.add(key_item)
 
     @property
     def hit_points(self):

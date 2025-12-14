@@ -7,6 +7,7 @@ import pytmx
 import pygame
 import math
 import random
+import enum
 from pygame import event
 from pygame import time
 from pygame import sprite
@@ -21,6 +22,13 @@ from projectz.hud import HUD
 pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
+
+
+class GameStates(enum.Enum):
+    Map = "Map"
+    Paused = "Paused"
+    Exploring = "Exploring"
+    Inventory = "Inventory"
 
 
 class Game:
@@ -38,6 +46,7 @@ class Game:
         self.config = config
         self.clock = time.Clock()
         self.running = True
+        self.state = GameStates.Exploring
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.surface = pygame.Surface((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
@@ -234,6 +243,16 @@ class Game:
             for pygame_event in event.get():
                 if pygame_event.type == pygame.QUIT:
                     self.running = False
+                elif pygame_event.type == pygame.KEYDOWN:
+                    if pygame_event.key == pygame.K_p:
+
+                        if self.state == GameStates.Paused:
+                            self.state = GameStates.Exploring
+                        else:
+                            self.state = GameStates.Paused
+
+                if self.state == GameStates.Paused:
+                    return
                 self.player.handle_event(pygame_event)
 
             # --- UPDATE STEP (Movement) ---
@@ -261,5 +280,3 @@ class Game:
 
             pygame.transform.scale(self.surface, self.screen.get_size(), self.screen)
             pygame.display.flip()
-
-
