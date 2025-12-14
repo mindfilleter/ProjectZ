@@ -78,7 +78,9 @@ class PausedState(GameState):
         )
 
     def handle_input(self, pygame_event):
-        pass
+        if pygame_event.type == pygame.KEYDOWN:
+            if pygame_event.key == pygame.K_p:
+                self.game.state = GameStates.Exploring
 
     def update(self):
         pass
@@ -108,6 +110,9 @@ class ExploringState(GameState):
 
     def handle_input(self, pygame_event):
         self.game.player.handle_event(pygame_event)
+        if pygame_event.type == pygame.KEYDOWN:
+            if pygame_event.key == pygame.K_p:
+                self.game.state = GameStates.Paused
 
     def update(self):
         self.game.player.update(self.game.collision_rects)
@@ -343,12 +348,6 @@ class Game:
             for pygame_event in event.get():
                 if pygame_event.type == pygame.QUIT:
                     self.running = False
-                elif pygame_event.type == pygame.KEYDOWN:
-                    if pygame_event.key == pygame.K_p:
-                        if self.state == GameStates.Paused:
-                            self.state = GameStates.Exploring
-                        else:
-                            self.state = GameStates.Paused
 
                 self.game_states[self.state].handle_input(pygame_event)
 
