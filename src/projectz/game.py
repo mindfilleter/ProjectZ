@@ -96,10 +96,11 @@ class InventoryState(GameState):
                 super().__init__(*groups)
                 self.image = pygame.Surface((20, 20)).convert_alpha()
                 self.rect = self.image.get_rect()
-                self.color = self.image.fill(0, 0, 255, self.show * 255)
+                self.show = 1
+                self.color = (0, 0, 255, self.show * 255)
+                self.image.fill(self.color)
                 self.x = x
                 self.y = y
-                self.show = 1
                 self.hovering = 0
                 self.hover_offset = 5
 
@@ -125,12 +126,13 @@ class InventoryState(GameState):
 
     def update(self):
         for item in self.items:
-            if item["show"] == 1:
-                item.image.fill(self.color)
+            if item.show == 1:
+                item.update()
 
-    def draw(self, screen):
+    def draw(self):
+        self.game.game_states[GameStates.Exploring].draw()
         for item in self.items:
-            pygame.draw.rect(screen, item.color, item.rect)
+            self.game.surface.blit(item.image, item.rect)
 
 
 class ExploringState(GameState):
@@ -142,8 +144,8 @@ class ExploringState(GameState):
         if pygame_event.type == pygame.KEYDOWN:
             if pygame_event.key == pygame.K_p:
                 self.game.state = GameStates.Paused
-            if pygame_event.type == pygame.K_e:
-                self.game.state == GameStates.Inventory
+            if pygame_event.key == pygame.K_e:
+                self.game.state = GameStates.Inventory
 
     def update(self):
         self.game.player.update(self.game.collision_rects)
