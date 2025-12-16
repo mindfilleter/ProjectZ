@@ -91,14 +91,46 @@ class InventoryState(GameState):
     def __init__(self, game):
         super().__init__(game)
 
+        class Item(sprite.Sprite):
+            def __init__(self, x, y, *groups):
+                super().__init__(*groups)
+                self.image = pygame.Surface((20, 20)).convert_alpha()
+                self.rect = self.image.get_rect()
+                self.color = self.image.fill(0, 0, 255, self.show * 255)
+                self.x = x
+                self.y = y
+                self.show = 1
+                self.hovering = 0
+                self.hover_offset = 5
+
+            def update(self):
+                mousex, mousey = pygame.mouse.get_pos()
+                if self.show == 1:
+                    if self.rect.collidepoint(mousex, mousey):
+                        self.hovering = 1
+                        self.rect.x = self.x + self.hover_offset
+                        self.rect.y = self.y - self.hover_offset
+                    else:
+                        self.hovering = 0
+                        self.rect.x = self.x - self.hover_offset
+                        self.rect.y = self.y + self.hover_offset
+
+        self.new_object = Item(40, 40)
+        self.items = [self.new_object]
+
     def handle_input(self, pygame_event):
-        pass
+        if pygame_event.type == pygame.KEYDOWN:
+            if pygame_event.key == pygame.K_e:
+                self.game.state = GameStates.Exploring
 
     def update(self):
-        pass
+        for item in self.items:
+            if item["show"] == 1:
+                item.image.fill(self.color)
 
-    def draw(self):
-        pass
+    def draw(self, screen):
+        for item in self.items:
+            pygame.draw.rect(screen, item.color, item.rect)
 
 
 class ExploringState(GameState):
@@ -110,6 +142,8 @@ class ExploringState(GameState):
         if pygame_event.type == pygame.KEYDOWN:
             if pygame_event.key == pygame.K_p:
                 self.game.state = GameStates.Paused
+            if pygame_event.type == pygame.K_e:
+                self.game.state == GameStates.Inventory
 
     def update(self):
         self.game.player.update(self.game.collision_rects)
