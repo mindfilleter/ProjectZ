@@ -91,6 +91,8 @@ class InventoryState(GameState):
     def __init__(self, game):
         super().__init__(game)
 
+        # We define the Item blueprint right here inside the init!
+        # It's like a private "My Block" just for this setup.
         class Item(sprite.Sprite):
             def __init__(self, x, y, *groups):
                 super().__init__(*groups)
@@ -116,6 +118,17 @@ class InventoryState(GameState):
                         self.rect.x = self.x - self.hover_offset
                         self.rect.y = self.y + self.hover_offset
 
+        # --- Inventory Setup ---
+        self.image = pygame.Surface(
+            (SCREEN_WIDTH - 10, SCREEN_HEIGHT + 10)
+        ).convert_alpha()
+        self.image.fill((0, 0, 0, 100))
+
+        # FIX 1: I finished the coordinate numbers here.
+        # In your code it said "topleft=", which confuses Python.
+        self.rect = self.image.get_rect(topleft=(10, 10))
+
+        # We can use Item here because we are still inside the __init__ function!
         self.new_object = Item(40, 40)
         self.items = [self.new_object]
 
@@ -131,6 +144,9 @@ class InventoryState(GameState):
 
     def draw(self):
         self.game.game_states[GameStates.Exploring].draw()
+
+        self.game.surface.blit(self.image, self.rect)
+
         for item in self.items:
             self.game.surface.blit(item.image, item.rect)
 
