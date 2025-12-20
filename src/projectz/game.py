@@ -88,59 +88,83 @@ class PausedState(GameState):
 
 
 class InventoryState(GameState):
+
+    class Item(sprite.Sprite):
+        def __init__(self, id, space_size, inv_rect, *groups):
+            super().__init__(*groups)
+            self.image = pygame.Surface((20, 20)).convert_alpha()
+            self.rect = self.image.get_rect()
+            self.show = 0
+            self.color = (0, 0, 255, self.show * 255)
+            self.image.fill(self.color)
+            self.id = id
+            self.space_size = space_size
+            self.rect.x = (inv_rect.x + inv_rect.x // 2) + self.id[0] * self.space_size[
+                0
+            ]
+            self.rect.y = (inv_rect.y + inv_rect.y // 2) + self.id[1] * self.space_size[
+                1
+            ]
+
+        def update(self):
+            mousex, mousey = pygame.mouse.get_pos()
+            if self.show == 1:
+                self.color = (0, 0, 255, self.show * 255)
+                self.image.fill(self.color)
+                if self.rect.collidepoint(mousex, mousey):
+                    self.hovering = 1
+                else:
+                    self.hovering = 0
+
+            else:
+                self.color = (0, 0, 255, self.show * 255)
+                self.image.fill(self.color)
+
     def __init__(self, game):
         super().__init__(game)
 
-        # We define the Item blueprint right here inside the init!
-        # It's like a private "My Block" just for this setup.
-        class Item(sprite.Sprite):
-            def __init__(self, x, y, *groups):
-                super().__init__(*groups)
-                self.image = pygame.Surface((20, 20)).convert_alpha()
-                self.rect = self.image.get_rect()
-                self.show = 1
-                self.color = (0, 0, 255, self.show * 255)
-                self.image.fill(self.color)
-                self.x = x
-                self.y = y
-                self.hovering = 0
-                self.hover_offset = 5
-
-            def update(self):
-                mousex, mousey = pygame.mouse.get_pos()
-                if self.show == 1:
-                    if self.rect.collidepoint(mousex, mousey):
-                        self.hovering = 1
-                        self.rect.x = self.x + self.hover_offset
-                        self.rect.y = self.y - self.hover_offset
-                    else:
-                        self.hovering = 0
-                        self.rect.x = self.x - self.hover_offset
-                        self.rect.y = self.y + self.hover_offset
-
         # --- Inventory Setup ---
-        self.image = pygame.Surface(
-            (SCREEN_WIDTH - 10, SCREEN_HEIGHT + 10)
-        ).convert_alpha()
-        self.image.fill((0, 0, 0, 100))
+        self.image = pygame.Surface((200, 250)).convert_alpha()
+        self.image.fill((0, 0, 0, 200))
+        self.rows = 4
+        self.cols = 5
+        self.inv_space_size = (
+            self.image.get_width() // self.rows,
+            self.image.get_height() // self.cols,
+        )
 
         # FIX 1: I finished the coordinate numbers here.
         # In your code it said "topleft=", which confuses Python.
-        self.rect = self.image.get_rect(topleft=(10, 10))
+        self.rect = self.image.get_rect(topleft=(20, 20))
 
         # We can use Item here because we are still inside the __init__ function!
-        self.new_object = Item(40, 40)
-        self.items = [self.new_object]
+
+        self.items = []
 
     def handle_input(self, pygame_event):
         if pygame_event.type == pygame.KEYDOWN:
             if pygame_event.key == pygame.K_e:
                 self.game.state = GameStates.Exploring
+            if pygame_event.key == pygame.K_a:
+                self.new_object = self.Item(
+                    (
+                        random.randint(0, self.rows - 1),
+                        random.randint(0, self.cols - 1),
+                    ),
+                    self.inv_space_size,
+                    self.rect,
+                )
+                self.items.append(self.new_object)
 
     def update(self):
         for item in self.items:
             if item.show == 1:
                 item.update()
+        for item in self.items:
+            if item in self.items:
+                item.show = 1
+            else:
+                item.show = 0
 
     def draw(self):
         self.game.game_states[GameStates.Exploring].draw()
