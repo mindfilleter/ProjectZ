@@ -95,7 +95,7 @@
   </object>
  </objectgroup>
  <objectgroup id="5" name="objects">
-  <object id="32" name="player_start" x="160" y="160" width="16" height="16"/>
+  <object id="32" name="player_start" x="160" y="176" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="2" name="walkable">
   <object id="1" x="0" y="0" width="800" height="16"/>
@@ -117,17 +117,17 @@
   <object id="31" x="144" y="112" width="32" height="48"/>
  </objectgroup>
  <objectgroup id="6" name="enemies">
-  <object id="33" name="enemy_spawn" x="80" y="128" width="16" height="16">
+  <object id="33" name="enemy_spawn" x="224" y="112" width="16" height="16">
    <properties>
     <property name="slime_type" value="red"/>
    </properties>
   </object>
-  <object id="34" name="enemy_spawn" x="500" y="400" width="16" height="16">
+  <object id="34" name="enemy_spawn" x="500" y="500" width="16" height="16">
    <properties>
     <property name="slime_type" value="blue"/>
    </properties>
   </object>
-  <object id="35" name="enemy_spawn" x="400" y="200" width="16" height="16">
+  <object id="35" name="enemy_spawn" x="400" y="300" width="16" height="16">
    <properties>
     <property name="slime_type" value="green"/>
    </properties>

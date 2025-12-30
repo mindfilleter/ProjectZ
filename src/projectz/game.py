@@ -22,6 +22,7 @@ import pytmx
 from projectz import map
 from projectz.enemies import Enemy
 from projectz.hud import HUD
+from projectz.npcs import WanderingNPC
 from projectz.player import Player
 
 
@@ -35,6 +36,7 @@ class GameStates(enum.Enum):
     Paused = "Paused"
     Exploring = "Exploring"
     Inventory = "Inventory"
+    Dialog = "Dialog"
 
 
 class GameState(abc.ABC):
@@ -88,7 +90,6 @@ class PausedState(GameState):
 
 
 class InventoryState(GameState):
-
     class Item(sprite.Sprite):
         def __init__(self, id, space_size, inv_rect, *groups):
             super().__init__(*groups)
@@ -99,12 +100,12 @@ class InventoryState(GameState):
             self.image.fill(self.color)
             self.id = id
             self.space_size = space_size
-            self.rect.x = (inv_rect.x + inv_rect.x // 2) + self.id[0] * self.space_size[
+            self.rect.x = (inv_rect.x + inv_rect.x // 2) + self.id[
                 0
-            ]
-            self.rect.y = (inv_rect.y + inv_rect.y // 2) + self.id[1] * self.space_size[
+            ] * self.space_size[0]
+            self.rect.y = (inv_rect.y + inv_rect.y // 2) + self.id[
                 1
-            ]
+            ] * self.space_size[1]
 
         def update(self):
             mousex, mousey = pygame.mouse.get_pos()
@@ -175,6 +176,55 @@ class InventoryState(GameState):
             self.game.surface.blit(item.image, item.rect)
 
 
+class DialogState(GameState):
+    def __init__(self, game, npc):
+        super().__init__(game)
+        self.npc = npc
+        self.font = pygame.font.Font(None, 24)
+        self.text = self.font.render(
+            self.npc.dialogs[0], True, (255, 255, 255)
+        )
+        self.text_rect = self.text.get_rect(
+            center=(
+                SCREEN_WIDTH // 4,
+                SCREEN_HEIGHT // 4,
+            )
+        )
+        self.dialog_box = pygame.Rect(
+            (0, 0),
+            (SCREEN_WIDTH // 2 - 20, self.game.TILE_SIZE * 3),
+        )
+        self.dialog_box.center = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 4)
+        self.text_rect.center = self.dialog_box.center
+
+        self.chevron = self.font.render(">", True, (255, 255, 255))
+        self.chevron_rect = self.chevron.get_rect(
+            midleft=(self.dialog_box.right - 20, self.dialog_box.centery)
+        )
+        self.chevron_visible = True
+        self.chevron_timer = pygame.time.get_ticks()
+
+    def handle_input(self, pygame_event):
+        if pygame_event.type == pygame.KEYDOWN:
+            if pygame_event.key == pygame.K_RETURN:
+                self.npc.cycle_dialogs()
+                self.game.state = GameStates.Exploring
+
+    def update(self):
+        if pygame.time.get_ticks() - self.chevron_timer > 500:
+            self.chevron_visible = not self.chevron_visible
+            self.chevron_timer = pygame.time.get_ticks()
+
+    def draw(self):
+        self.game.game_states[GameStates.Exploring].draw()
+        pygame.draw.rect(
+            self.game.surface, (0, 0, 0), self.dialog_box, border_radius=5
+        )
+        self.game.surface.blit(self.text, self.text_rect)
+        if self.chevron_visible:
+            self.game.surface.blit(self.chevron, self.chevron_rect)
+
+
 class ExploringState(GameState):
     def __init__(self, game):
         super().__init__(game)
@@ -186,11 +236,23 @@ class ExploringState(GameState):
                 self.game.state = GameStates.Paused
             if pygame_event.key == pygame.K_e:
                 self.game.state = GameStates.Inventory
+            if pygame_event.key == pygame.K_RETURN:
+                self.check_for_dialog()
+
+    def check_for_dialog(self):
+        for npc in self.game.npc_group:
+            if self.game.player.is_adjacent_to(npc):
+                self.game.game_states[GameStates.Dialog] = DialogState(
+                    self.game, npc
+                )
+                self.game.state = GameStates.Dialog
+                break
 
     def update(self):
-        self.game.player.update(self.game.collision_rects)
+        self.game.player.update(self.game.map.collision_rects)
         self.game.hud.update()
-        self.game.enemy_group.update(self.game.collision_rects)
+        self.game.enemy_group.update(self.game.map.collision_rects)
+        self.game.npc_group.update(self.game.map.collision_rects)
         self.game.check_exits()
         if self.game.group:
             self.game.group.center(self.game.player.rect.center)
@@ -223,6 +285,7 @@ class Game:
             GameStates.Paused: PausedState(self),
             GameStates.Exploring: ExploringState(self),
             GameStates.Inventory: InventoryState(self),
+            GameStates.Dialog: None,  # Initialized when needed
         }
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -235,15 +298,13 @@ class Game:
         # --- Sprite Groups ---
         self.player_group = pygame.sprite.Group()
         self.enemy_group = pygame.sprite.Group()
+        self.npc_group = pygame.sprite.Group()
 
-        self.player = Player(self.TILE_SIZE)
+        self.player = Player(self, self.TILE_SIZE)
         self.player_group.add(self.player)  # Player is added to its own group
         self.hud = HUD(self.player)
 
-        self.tiled_map = None
-        self.collision_rects = []
-        self.exits = []
-        self.enemy_spawns = []
+        self.map = None
 
     def _reset_map_state(self):
         """
@@ -252,13 +313,11 @@ class Game:
         self.map_data = None
         self.map_layer = None
         self.group = None
-        self.tiled_map = None
-        self.collision_rects = []
-        self.exits = []
-        self.enemy_spawns = []
+        self.map = None
 
         # Clear all enemies when changing maps!
         self.enemy_group.empty()
+        self.npc_group.empty()
 
     def _load_map_visuals(self, map_name):
         """
@@ -274,9 +333,11 @@ class Game:
         if not isinstance(map_name, str):
             map_name = "default_map.tmx"  # Use a safe default
 
+        self.map = map.Map(map_name)
+
         try:
             with resources.path("projectz.assets", map_name) as map_path:
-                tmx_map = pytmx.util_pygame.load_pygame(map_path)
+                tmx_map = self.map.tiled_map
                 self.map_data = TiledMapData(tmx_map)
         except FileNotFoundError:
             print(
@@ -311,10 +372,13 @@ class Game:
             ground_layer_index = next(
                 i
                 for i, layer in enumerate(tmx_map.visible_layers)
-                if isinstance(layer, pytmx.TiledTileLayer) and layer.name == "ground"
+                if isinstance(layer, pytmx.TiledTileLayer)
+                and layer.name == "ground"
             )
         except StopIteration:
-            print("Warning: 'ground' layer not found. Defaulting player layer to 0.")
+            print(
+                "Warning: 'ground' layer not found. Defaulting player layer to 0."
+            )
             ground_layer_index = 0
 
         if player_x is not None and player_y is not None:
@@ -342,15 +406,7 @@ class Game:
         Args:
             map_name: The name of the map to load.
         """
-        self.tiled_map = map.load_map(map_name)
-        if self.tiled_map is not None:
-            self.collision_rects = map.get_collision_rects(self.tiled_map)
-            self.exits = map.get_exit_rects(self.tiled_map)
-            self.enemy_spawns = map.get_enemy_spawn_points(self.tiled_map)
-        else:
-            self.collision_rects = []
-            self.exits = []
-            self.enemy_spawns = []
+        pass
 
     def change_map(self, map_name, player_x=None, player_y=None):
         """
@@ -373,40 +429,55 @@ class Game:
 
         # Call the spawn logic right after changing the map!
         self.enemy_spawn_logic()
+        self.npc_spawn_logic()
 
     def check_exits(self):
         """
         Checks if the player is colliding with any exits.
         """
-        for exit in self.exits:
-            exit_rect = pygame.Rect(exit.x, exit.y, exit.width, exit.height)
+        for exit_obj in self.map.exits:
+            exit_rect = pygame.Rect(
+                exit_obj.x, exit_obj.y, exit_obj.width, exit_obj.height
+            )
             if self.player.rect.colliderect(exit_rect):
                 # Ensure properties exist before accessing
                 if (
-                    "to_map" in exit.properties
-                    and "to_x" in exit.properties
-                    and "to_y" in exit.properties
+                    "to_map" in exit_obj.properties
+                    and "to_x" in exit_obj.properties
+                    and "to_y" in exit_obj.properties
                 ):
                     self.change_map(
-                        exit.properties["to_map"],
-                        int(exit.properties["to_x"]),
-                        int(exit.properties["to_y"]),
+                        exit_obj.properties["to_map"],
+                        int(exit_obj.properties["to_x"]),
+                        int(exit_obj.properties["to_y"]),
                     )
                     break
                 else:
                     print(
-                        f"Warning: Exit object {exit.name} is missing 'to_map', 'to_x', or 'to_y' properties."
+                        f"Warning: Exit object {exit_obj.name} is missing 'to_map', 'to_x', or 'to_y' properties."
                     )
 
     def enemy_spawn_logic(self):
         """
         Spawns enemies based on the spawn points defined in the map.
         """
-        for spawn in self.enemy_spawns:
+        for spawn in self.map.enemy_spawns:
             slime_type = spawn.properties.get("slime_type", "red")
-            new_object = Enemy(spawn.x, spawn.y, slime_type, self.player)
+            new_object = Enemy(self, spawn.x, spawn.y, slime_type, self.player)
             self.enemy_group.add(new_object)
             self.group.add(new_object)
+
+    def npc_spawn_logic(self):
+        """
+        Spawns NPCs based on the spawn points defined in the map.
+        """
+        for spawn in self.map.npc_spawns:
+            wandering_area_name = spawn.properties.get("wandering_area")
+            if wandering_area_name in self.map.npc_wandering_areas:
+                boundaries = self.map.npc_wandering_areas[wandering_area_name]
+                new_npc = WanderingNPC(self, spawn, boundaries)
+                self.npc_group.add(new_npc)
+                self.group.add(new_npc)
 
     def start(self):
         """
@@ -424,7 +495,10 @@ class Game:
                 self.game_states[self.state].handle_input(pygame_event)
 
             self.game_states[self.state].update()
-            self.game_states[self.state].draw()
+            if self.game_states[self.state]:
+                self.game_states[self.state].draw()
 
-            pygame.transform.scale(self.surface, self.screen.get_size(), self.screen)
+            pygame.transform.scale(
+                self.surface, self.screen.get_size(), self.screen
+            )
             pygame.display.flip()

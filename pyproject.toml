@@ -14,11 +14,26 @@ dependencies = [
     "pyxdg (>=0.28,<0.29)",
     "pyscroll (>=2.31,<3.0)",
     "pytmx (>=3.32,<4.0)",
+    "pathfinding (>=1.0.18,<2.0.0)",
 ]
 
 [tool.poetry]
 packages = [{ include = "projectz", from = "src" }]
 
+
+[tool.poetry.group.emacs.dependencies]
+python-lsp-server = "^1.14.0"
+python-lsp-ruff = "^2.1.0"
+
+[tool.ruff]
+line-length = 79
+select = ["E", "F"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

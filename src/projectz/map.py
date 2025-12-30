@@ -9,6 +9,32 @@ import pytmx
 import pygame
 
 
+class Map:
+    def __init__(self, map_name):
+        self.tiled_map = load_map(map_name)
+        self.collision_rects = get_collision_rects(self.tiled_map)
+        self.exits = get_exit_rects(self.tiled_map)
+        self.enemy_spawns = get_enemy_spawn_points(self.tiled_map)
+        self.npc_spawns = get_npc_spawn_points(self.tiled_map)
+        self.npc_wandering_areas = get_npc_wandering_areas(self.tiled_map)
+
+    def is_wall(self, x, y):
+        """
+        Checks if a point is inside a wall collision rect.
+
+        Args:
+            x: The x coordinate in pixels.
+            y: The y coordinate in pixels.
+
+        Returns:
+            True if the point is a wall, False otherwise.
+        """
+        for rect in self.collision_rects:
+            if rect.collidepoint(x, y):
+                return True
+        return False
+
+
 def load_map(map_name):
     """
     Loads a TMX map.
@@ -92,3 +118,35 @@ def get_enemy_spawn_points(tiled_map):
         spawns.append(obj)
 
     return spawns
+
+
+def get_npc_spawn_points(tiled_map):
+    """
+    Gets the npc spawn points from a Tiled map.
+    """
+    spawns = []
+    try:
+        npc_layer = tiled_map.get_layer_by_name("npcs")
+    except ValueError:
+        return spawns
+    for obj in npc_layer:
+        if obj.name == "npc_spawn":
+            spawns.append(obj)
+    return spawns
+
+
+def get_npc_wandering_areas(tiled_map):
+    """
+    Gets the npc wandering areas from a Tiled map.
+    """
+    areas = {}
+    try:
+        npc_layer = tiled_map.get_layer_by_name("npcs")
+    except ValueError:
+        return areas
+    for obj in npc_layer:
+        if obj.name == "wandering_area" and "area_name" in obj.properties:
+            areas[obj.properties["area_name"]] = pygame.Rect(
+                obj.x, obj.y, obj.width, obj.height
+            )
+    return areas

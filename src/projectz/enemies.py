@@ -1,11 +1,14 @@
 import math
+import random
 import pygame
 from importlib import resources
 from pygame import sprite
 
+from projectz.common import Collidable, Pathfinder
+
 
 class Enemy(sprite.Sprite):
-    def __init__(self, x, y, type, player):
+    def __init__(self, game, x, y, type, player):
         # 1. Initialize the base Sprite class
         super().__init__()
 
@@ -38,63 +41,40 @@ class Enemy(sprite.Sprite):
         self.image.blit(spritesheet, (0, 0), frame_rect)
 
         # Use floating point numbers for smooth movement
-        self.x = float(x)
-        self.y = float(y)
+        self.pos = pygame.math.Vector2(x, y)
         self.type = type
-        self.dir = 0
-        self.spd = 5
-        self.friction = 5
+        self.spd = 0.8 # Slower than player
 
         # 3. The 'rect' is used for positioning and collision checking.
-        self.rect = self.image.get_rect(topleft=(int(self.x), int(self.y)))
+        self.rect = self.image.get_rect(topleft=(int(self.pos.x), int(self.pos.y)))
 
         self.player = player  # Store the player so we can chase them
+        self.collidable = Collidable(game, self.pos.x, self.pos.y, self)
+        self.pathfinder = Pathfinder(game, self.pos.x, self.pos.y, self)
+        self.path = []
 
     def update(self, collision_rects):
+        # Get a new path to the player periodically
+        if not self.path or random.randint(0, 100) < 2: # 2% chance to recalculate path
+             self.path = self.pathfinder.get_path(self.rect.center, self.player.rect.center)
+        
+        if self.path:
+            next_point = pygame.math.Vector2(self.path[0])
+            direction = next_point - self.pos
 
-        # Calculate the distance and direction to the player
-        # We target the player's center for smooth tracking
+            if direction.length() < 2:
+                self.path.pop(0)
+                if not self.path:
+                    return
+                else:
+                    next_point = pygame.math.Vector2(self.path[0])
+                    direction = next_point - self.pos
+            
+            if direction.length() > 0:
+                direction.normalize_ip()
 
-        if self.spd <= 0.01:
-            self.spd = 2
-            self.dx = (
-                self.player.rect.centerx - self.x
-            )  # Calculate difference (Player - Enemy)
-            self.dy = (
-                self.player.rect.centery - self.y
-            )  # Calculate difference (Player - Enemy)
+            movement = direction * self.spd
 
-            # Calculate the angle (in radians) to the player
-            self.dir = math.atan2(self.dy, self.dx)
-        else:
-            self.spd -= 0.05
-
-        # Calculate new position based on speed and direction
-        new_x = self.x + math.cos(self.dir) * self.spd
-        new_y = self.y + math.sin(self.dir) * self.spd
-
-        # Store old position for collision rollback
-        prev_x = self.x
-        prev_y = self.y
-
-        # --- Collision Check (Horizontal) ---
-        self.x = new_x
-        self.rect.x = int(self.x)
-
-        # Check if the new X position hits a wall
-        for wall in collision_rects:
-            if self.rect.colliderect(wall):
-                self.x = prev_x  # If it hits, move back
-                self.rect.x = int(self.x)
-                break  # Stop checking walls
-
-        # --- Collision Check (Vertical) ---
-        self.y = new_y
-        self.rect.y = int(self.y)
-
-        # Check if the new Y position hits a wall
-        for wall in collision_rects:
-            if self.rect.colliderect(wall):
-                self.y = prev_y  # If it hits, move back
-                self.rect.y = int(self.y)
-                break  # Stop checking walls
+            if not self.collidable.check_collision(dx=movement.x, dy=movement.y):
+                self.pos += movement
+                self.rect.center = self.pos
