@@ -4,41 +4,14 @@ import pygame
 from importlib import resources
 from pygame import sprite
 
+from projectz.animated_sprite import AnimatedSprite
 from projectz.common import Collidable, Pathfinder
 
 
-class Enemy(sprite.Sprite):
+class Enemy(AnimatedSprite):
     def __init__(self, game, x, y, type, player):
         # 1. Initialize the base Sprite class
-        super().__init__()
-
-        # 2. Set the 'Costume' (the image) for the sprite.
-        try:
-            with resources.path("projectz.assets", "slimes.png") as sheet_path:
-                spritesheet = pygame.image.load(sheet_path).convert_alpha()
-        except FileNotFoundError:
-            print("Error: slimes.png not found. Using red square placeholder.")
-            spritesheet = pygame.Surface((16, 16), pygame.SRCALPHA)
-            spritesheet.fill((200, 50, 50))
-
-        # Define slime positions on the spritesheet
-        slime_positions = {
-            "red": (0, 0),  # x, y of the first frame
-            "blue": (0, 16),
-            "green": (0, 32),
-        }
-
-        # Default to red if type is unknown
-        slime_type_key = type.split(" ")[0]  # in case of "red slime"
-        if slime_type_key not in slime_positions:
-            slime_type_key = "red"
-
-        start_x, start_y = slime_positions[slime_type_key]
-
-        # For now, we only use the first frame of the animation
-        frame_rect = pygame.Rect(start_x, start_y, 16, 16)
-        self.image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
-        self.image.blit(spritesheet, (0, 0), frame_rect)
+        super().__init__("slimes.png")
 
         # Use floating point numbers for smooth movement
         self.pos = pygame.math.Vector2(x, y)
@@ -53,12 +26,16 @@ class Enemy(sprite.Sprite):
         self.pathfinder = Pathfinder(game, self.pos.x, self.pos.y, self)
         self.path = []
 
-    def update(self, collision_rects):
+    def update(self, dt, collision_rects):
         # Get a new path to the player periodically
-        if not self.path or random.randint(0, 100) < 2: # 2% chance to recalculate path
-             self.path = self.pathfinder.get_path(self.rect.center, self.player.rect.center)
-        
+        if not self.path or random.randint(0, 100) < 2:  # 2% chance to recalculate path
+            self.path = self.pathfinder.get_path(
+                self.rect.center, self.player.rect.center
+            )
+
+        is_moving = False
         if self.path:
+            is_moving = True
             next_point = pygame.math.Vector2(self.path[0])
             direction = next_point - self.pos
 
@@ -69,12 +46,27 @@ class Enemy(sprite.Sprite):
                 else:
                     next_point = pygame.math.Vector2(self.path[0])
                     direction = next_point - self.pos
-            
+
             if direction.length() > 0:
                 direction.normalize_ip()
+
+            if abs(direction.x) > abs(direction.y):
+                if direction.x > 0:
+                    self.state = "walk_right"
+                else:
+                    self.state = "walk_left"
+            else:
+                if direction.y > 0:
+                    self.state = "walk_down"
+                else:
+                    self.state = "walk_up"
 
             movement = direction * self.spd
 
             if not self.collidable.check_collision(dx=movement.x, dy=movement.y):
                 self.pos += movement
                 self.rect.center = self.pos
+        if not is_moving:
+            self.state = "idle_down"
+
+        self.update_animation(dt)

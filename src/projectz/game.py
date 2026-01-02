@@ -248,11 +248,11 @@ class ExploringState(GameState):
                 self.game.state = GameStates.Dialog
                 break
 
-    def update(self):
-        self.game.player.update(self.game.map.collision_rects)
+    def update(self, dt):
+        self.game.player.update(dt, self.game.map.collision_rects)
         self.game.hud.update()
-        self.game.enemy_group.update(self.game.map.collision_rects)
-        self.game.npc_group.update(self.game.map.collision_rects)
+        self.game.enemy_group.update(dt, self.game.map.collision_rects)
+        self.game.npc_group.update(dt, self.game.map.collision_rects)
         self.game.check_exits()
         if self.game.group:
             self.game.group.center(self.game.player.rect.center)
@@ -486,7 +486,7 @@ class Game:
         self.change_map("map.tmx")
 
         while self.running:
-            self.clock.tick(Game.TARGET_FPS)
+            dt = self.clock.tick(Game.TARGET_FPS) / 1000.0
 
             for pygame_event in event.get():
                 if pygame_event.type == pygame.QUIT:
@@ -494,7 +494,7 @@ class Game:
 
                 self.game_states[self.state].handle_input(pygame_event)
 
-            self.game_states[self.state].update()
+            self.game_states[self.state].update(dt)
             if self.game_states[self.state]:
                 self.game_states[self.state].draw()
 
@@ -502,3 +502,4 @@ class Game:
                 self.surface, self.screen.get_size(), self.screen
             )
             pygame.display.flip()
+

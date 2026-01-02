@@ -1,0 +1,16 @@
+{
+  "head": {
+    "frame_width": 16,
+    "frame_height": 16
+  },
+  "animations": {
+    "idle_down": [[0, 200], [1, 200], ["goto", 0]],
+    "idle_up": [[0, 200], [1, 200], ["goto", 0]],
+    "idle_right": [[0, 200], [1, 200], ["goto", 0]],
+    "idle_left": [[0, 200], [1, 200], ["goto", 0]],
+    "walk_down": [[0, 200], [1, 200], ["goto", 0]],
+    "walk_up": [[0, 200], [1, 200], ["goto", 0]],
+    "walk_right": [[0, 200], [1, 200], ["goto", 0]],
+    "walk_left": [[0, 200], [1, 200], ["goto", 0]]
+  }
+}

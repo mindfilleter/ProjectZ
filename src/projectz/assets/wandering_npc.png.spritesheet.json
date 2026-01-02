@@ -1,0 +1,16 @@
+{
+  "head": {
+    "frame_width": 16,
+    "frame_height": 16
+  },
+  "animations": {
+    "idle_down": [[0, 100]],
+    "idle_up": [[3, 100]],
+    "idle_right": [[2, 100]],
+    "idle_left": [[1, 100]],
+    "walk_down": [[0, 100]],
+    "walk_up": [[3, 100]],
+    "walk_right": [[2, 100]],
+    "walk_left": [[1, 100]]
+  }
+}

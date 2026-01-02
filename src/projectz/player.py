@@ -6,6 +6,7 @@ from typing import Set
 import pygame.math
 import enum
 
+from projectz.animated_sprite import AnimatedSprite
 from projectz.common import Collidable
 
 
@@ -13,7 +14,7 @@ class KeyItems(enum.Enum):
     Sword = "Sword"
 
 
-class Player(sprite.Sprite):
+class Player(AnimatedSprite):
     """
     Represents the player character.
     """
@@ -25,7 +26,7 @@ class Player(sprite.Sprite):
         Args:
             *groups: The sprite groups to add the player to.
         """
-        super().__init__(*groups)
+        super().__init__("player.png", *groups)
         # Using Vector2 for smooth floating point positioning
         self.pos = pygame.math.Vector2(tile_size, tile_size)
         self.vel = pygame.math.Vector2(0, 0)
@@ -34,27 +35,11 @@ class Player(sprite.Sprite):
         self.hit_point_max = 4
         self._hit_points = self.hit_point_max
         # Rect for drawing and collision (must be integer coordinates)
-        self.rect = pygame.rect.Rect(
-            self.pos.x, self.pos.y, tile_size, tile_size
-        )
+        self.rect = self.image.get_rect(topleft=(self.pos.x, self.pos.y))
         self.move_dir = []
         self.inventory: Set[KeyItems] = set([])
         self.collidable = Collidable(game, self.pos.x, self.pos.y, self)
         self.facing = "down"
-
-        try:
-            with resources.path("projectz.assets", "player.png") as sheet_path:
-                spritesheet = pygame.image.load(sheet_path).convert_alpha()
-        except FileNotFoundError:
-            print("Error: player.png not found. Using red square placeholder.")
-            spritesheet = pygame.Surface((32, 32), pygame.SRCALPHA)
-            spritesheet.fill((255, 0, 0))
-
-        # Example frame at 32, 0, assuming 16x16 tiles
-        frame_rect = pygame.Rect(32, 0, tile_size, tile_size)
-
-        self.image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
-        self.image.blit(spritesheet, (0, 0), frame_rect)
 
     def give_item(self, key_item: KeyItems):
         self.inventory.add(key_item)
@@ -115,7 +100,7 @@ class Player(sprite.Sprite):
         hitbox = pygame.Rect(hitbox_pos, hitbox_size)
         return hitbox.colliderect(other_sprite.rect)
 
-    def update(self, collision_rects):
+    def update(self, dt, collision_rects):
         """
         Updates the player's state and handles collision.
 
@@ -124,18 +109,23 @@ class Player(sprite.Sprite):
         """
         # Input processing
         dx, dy = 0, 0
+        is_moving = False
         if "right" in self.move_dir:
             dx += self.spd
             self.facing = "right"
+            is_moving = True
         if "left" in self.move_dir:
             dx -= self.spd
             self.facing = "left"
+            is_moving = True
         if "up" in self.move_dir:
             dy -= self.spd
             self.facing = "up"
+            is_moving = True
         if "down" in self.move_dir:
             dy += self.spd
             self.facing = "down"
+            is_moving = True
 
         # Apply friction
         self.vel *= self.friction
@@ -149,3 +139,10 @@ class Player(sprite.Sprite):
         if not self.collidable.check_collision(dy=dy):
             self.pos.y += dy
         self.rect.y = int(self.pos.y)
+
+        # --- Animation ---
+        if is_moving:
+            self.state = f"walk_{self.facing}"
+        else:
+            self.state = f"idle_{self.facing}"
+        self.update_animation(dt)
