@@ -84,4 +84,7 @@ venv.bak/
 desktop.ini
 
 # Editor Backups
+
 .#*
+
+projects.org

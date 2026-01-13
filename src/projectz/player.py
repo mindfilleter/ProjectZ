@@ -1,7 +1,4 @@
 import pygame
-from pygame import sprite
-from pygame import rect
-from importlib import resources
 from typing import Set
 import pygame.math
 import enum
