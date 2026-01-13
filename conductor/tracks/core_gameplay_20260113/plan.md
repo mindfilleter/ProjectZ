@@ -12,7 +12,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 - [x] **Task:** Implement the player's attack animation and create a corresponding hitbox that appears during the attack swing. [6137ab9]
 - [x] **Task:** Add `HurtboxComponent` to enemies to detect collisions with the player's attack hitbox. [622e377]
 - [x] **Task:** Implement a basic damage calculation system when a hitbox and hurtbox overlap. [622e377]
-- [ ] **Task:** Develop a knockback function that applies a brief, opposing force to an entity upon being hit.
+- [x] **Task:** Develop a knockback function that applies a brief, opposing force to an entity upon being hit. [bfc895c]
 - [ ] **Task:** Conductor - User Manual Verification 'Combat System Foundation' (Protocol in workflow.md)
 
 ## Phase 2: Enemy AI & Behavior
