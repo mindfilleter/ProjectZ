@@ -78,23 +78,20 @@ class Player(AnimatedSprite):
         """
         # Input processing
         dx, dy = 0, 0
-        is_moving = False
+        is_moving = bool(self.move_dir)
+
         if "right" in self.move_dir:
             dx += self.spd
             self.facing = "right"
-            is_moving = True
         if "left" in self.move_dir:
             dx -= self.spd
             self.facing = "left"
-            is_moving = True
         if "up" in self.move_dir:
             dy -= self.spd
             self.facing = "up"
-            is_moving = True
         if "down" in self.move_dir:
             dy += self.spd
             self.facing = "down"
-            is_moving = True
 
         # Apply friction
         self.vel *= self.friction

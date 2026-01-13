@@ -5,8 +5,6 @@ This module contains the primary game logic and classes.
 # Python Standard Library Dependencies
 import abc
 from importlib import resources
-import enum
-import math
 import random
 
 # 3rd Party Dependencies
@@ -86,9 +84,11 @@ class PausedState(GameState):
 
     def on_enter(self):
         self.game.register_consumer(pygame.KEYDOWN, self.consumer)
+        self.game.register_consumer(pygame.KEYUP, self.consumer)
 
     def on_exit(self):
         self.game.unregister_consumer(pygame.KEYDOWN, self.consumer)
+        self.game.unregister_consumer(pygame.KEYUP, self.consumer)
 
     def update(self, dt):
         pass
@@ -187,17 +187,13 @@ class DialogState(GameState):
     def __init__(self, game, npc):
         super().__init__(game)
         self.npc = npc
-        self.consumer = DialogEventConsumer(self.game, self.npc)
+        self.consumer = DialogEventConsumer(self.game, self)
         self.font = pygame.font.Font(None, 24)
-        self.text = self.font.render(
-            self.npc.dialogs[0], True, (255, 255, 255)
-        )
-        self.text_rect = self.text.get_rect(
-            center=(
-                SCREEN_WIDTH // 4,
-                SCREEN_HEIGHT // 4,
-            )
-        )
+        self.dialog_index = 0
+        self.text = None
+        self.text_rect = None
+        self._render_text()
+
         self.dialog_box = pygame.Rect(
             (0, 0),
             (SCREEN_WIDTH // 2 - 20, self.game.TILE_SIZE * 3),
@@ -211,6 +207,25 @@ class DialogState(GameState):
         )
         self.chevron_visible = True
         self.chevron_timer = pygame.time.get_ticks()
+
+    def _render_text(self):
+        self.text = self.font.render(
+            self.npc.dialogs[self.dialog_index], True, (255, 255, 255)
+        )
+        self.text_rect = self.text.get_rect(
+            center=(
+                SCREEN_WIDTH // 4,
+                SCREEN_HEIGHT // 4,
+            )
+        )
+
+    def advance_dialog(self):
+        self.dialog_index += 1
+        if self.dialog_index < len(self.npc.dialogs):
+            self._render_text()
+            self.text_rect.center = self.dialog_box.center
+        else:
+            self.game.change_state(GameStates.Exploring)
 
     def on_enter(self):
         self.game.register_consumer(pygame.KEYDOWN, self.consumer)
@@ -235,17 +250,28 @@ class DialogState(GameState):
 class ExploringState(GameState):
     def __init__(self, game):
         super().__init__(game)
-        self.player_movement_consumer = PlayerMovementConsumer(self.game.player)
+        self.player_movement_consumer = PlayerMovementConsumer(
+            self.game, self.game.player
+        )
         self.exploring_consumer = ExploringEventConsumer(self.game)
 
     def on_enter(self):
-        self.game.register_consumer(pygame.KEYDOWN, self.player_movement_consumer)
-        self.game.register_consumer(pygame.KEYUP, self.player_movement_consumer)
+        self.game.register_consumer(
+            pygame.KEYDOWN, self.player_movement_consumer
+        )
+        self.game.register_consumer(
+            pygame.KEYUP, self.player_movement_consumer
+        )
         self.game.register_consumer(pygame.KEYDOWN, self.exploring_consumer)
 
     def on_exit(self):
-        self.game.unregister_consumer(pygame.KEYDOWN, self.player_movement_consumer)
-        self.game.unregister_consumer(pygame.KEYUP, self.player_movement_consumer)
+        self.game.player.move_dir.clear()
+        self.game.unregister_consumer(
+            pygame.KEYDOWN, self.player_movement_consumer
+        )
+        self.game.unregister_consumer(
+            pygame.KEYUP, self.player_movement_consumer
+        )
         self.game.unregister_consumer(pygame.KEYDOWN, self.exploring_consumer)
 
     def check_for_dialog(self):
@@ -291,6 +317,14 @@ class Game:
         self.state = None
         self.event_consumers = {}
 
+        self.player_group = pygame.sprite.Group()
+        self.enemy_group = pygame.sprite.Group()
+        self.npc_group = pygame.sprite.Group()
+
+        self.player = Player(self, self.TILE_SIZE)
+        self.player_group.add(self.player)  # Player is added to its own group
+        self.hud = HUD(self.player)
+
         self.game_states = {
             GameStates.Map: MapState(self),
             GameStates.Paused: PausedState(self),
@@ -307,13 +341,6 @@ class Game:
         self.group = None  # This is the PyscrollGroup for map and player
 
         # --- Sprite Groups ---
-        self.player_group = pygame.sprite.Group()
-        self.enemy_group = pygame.sprite.Group()
-        self.npc_group = pygame.sprite.Group()
-
-        self.player = Player(self, self.TILE_SIZE)
-        self.player_group.add(self.player)  # Player is added to its own group
-        self.hud = HUD(self.player)
 
         self.map = None
 
@@ -330,9 +357,11 @@ class Game:
                 self.event_consumers[event_type].remove(consumer)
 
     def change_state(self, new_state):
+        print(new_state)
         if self.state and self.game_states.get(self.state):
             self.game_states[self.state].on_exit()
         self.state = new_state
+        event.clear()
         if self.game_states.get(self.state):
             self.game_states[self.state].on_enter()
 
@@ -533,4 +562,3 @@ class Game:
                 self.surface, self.screen.get_size(), self.screen
             )
             pygame.display.flip()
-

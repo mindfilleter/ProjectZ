@@ -4,10 +4,22 @@ This module handles the configuration for the game.
 
 import configparser
 from pathlib import Path
+import pygame
 import xdg.BaseDirectory
 
 CONFIG_DIR = Path(xdg.BaseDirectory.save_config_path("projectz"))
 CONFIG_FILE = CONFIG_DIR / "config.ini"
+
+DEFAULT_CONTROLS = {
+    "up": pygame.K_w,
+    "down": pygame.K_s,
+    "left": pygame.K_a,
+    "right": pygame.K_d,
+    "action": pygame.K_j,
+    "confirm": pygame.K_j,
+    "cancel": pygame.K_k,
+    "pause": pygame.K_p,
+}
 
 
 def create_default_config():
