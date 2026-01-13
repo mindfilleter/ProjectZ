@@ -9,7 +9,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 *Objective: Build the fundamental components of the combat system.*
 
 - [x] **Task:** Create a `HealthComponent` class that can be attached to both the player and enemies to manage hit points. [e2d349c]
-- [ ] **Task:** Implement the player's attack animation and create a corresponding hitbox that appears during the attack swing.
+- [x] **Task:** Implement the player's attack animation and create a corresponding hitbox that appears during the attack swing. [6137ab9]
 - [ ] **Task:** Add `HurtboxComponent` to enemies to detect collisions with the player's attack hitbox.
 - [ ] **Task:** Implement a basic damage calculation system when a hitbox and hurtbox overlap.
 - [ ] **Task:** Develop a knockback function that applies a brief, opposing force to an entity upon being hit.
