@@ -27,9 +27,9 @@ class HealthBar(sprite.Sprite):
                 self._calculate_size(), pygame.SRCALPHA
             )
 
-        if self._previous_player_hp != self.player.hit_points:
+        if self._previous_player_hp != self.player.current_hp:
             self._draw_health_bar()
-            self._previous_player_hp = self.player.hit_points
+            self._previous_player_hp = self.player.current_hp
 
     def _draw_health_bar(self):
         self.image.fill((0, 0, 0, 0))
@@ -37,7 +37,7 @@ class HealthBar(sprite.Sprite):
             (0, 0), (HealthBar.BAR_WIDTH, HealthBar.BAR_HEIGHT)
         )
 
-        for i in range(self.player.hit_points):
+        for i in range(self.player.current_hp):
             draw.rect(self.image, "black", stencil)
             draw.rect(self.image, HealthBar.COLOR, stencil.inflate(-2, -2))
             stencil.move_ip(
@@ -47,12 +47,12 @@ class HealthBar(sprite.Sprite):
     def _calculate_size(self):
         separator_padding = (
             HealthBar.BAR_SEPARATOR_WIDTH
-        ) * self.player.hit_point_max - 1
+        ) * self.player.max_hp - 1
 
         health_bar_size = (
-            (self.player.hit_point_max * HealthBar.BAR_WIDTH)
+            (self.player.max_hp * HealthBar.BAR_WIDTH)
             + separator_padding,
-            self.player.hit_point_max * HealthBar.BAR_HEIGHT,
+            self.player.max_hp * HealthBar.BAR_HEIGHT,
         )
 
         return health_bar_size
