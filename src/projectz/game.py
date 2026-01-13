@@ -305,6 +305,8 @@ class ExploringState(GameState):
         self.game.surface.fill((0, 0, 0))
         if self.game.group:
             self.game.group.draw(self.game.surface)
+        if self.game.player.hitbox:
+            pygame.draw.rect(self.game.surface, (255, 0, 0, 150), self.game.player.hitbox)
         self.game.hud.draw(self.game.surface)
 
 

@@ -100,6 +100,7 @@ class Player(AnimatedSprite):
         # Cooldown attack
         if self.attacking and now - self.attack_timer > self.attack_cooldown:
             self.attacking = False
+            self.hitbox = None
 
         # Input processing
         if not self.attacking:
