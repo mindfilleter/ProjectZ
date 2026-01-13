@@ -30,5 +30,3 @@ class AnimatedSprite(pygame.sprite.Sprite):
 
         self.animation.update(dt)
         self.image = self.animation.image
-        if "left" in self.state:
-            self.image = pygame.transform.flip(self.image, True, False)
