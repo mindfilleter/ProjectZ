@@ -22,7 +22,7 @@ import pytmx
 from projectz import map
 from projectz.enemies import Enemy
 from projectz.hud import HUD
-from projectz.npcs import WanderingNPC
+from projectz.npc import WanderingNPC
 from projectz.player import Player
 
 
@@ -210,8 +210,7 @@ class DialogState(GameState):
                 self.npc.cycle_dialogs()
                 self.game.state = GameStates.Exploring
 
-    def update(self):
-        if pygame.time.get_ticks() - self.chevron_timer > 500:
+    def update(self, dt):
             self.chevron_visible = not self.chevron_visible
             self.chevron_timer = pygame.time.get_ticks()
 
