@@ -60,6 +60,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         now = pygame.time.get_ticks()
         if now - self.knockback_timer < self.knockback_duration:
             self.pos += self.knockback_direction * self.knockback_speed * dt
+            self.rect.topleft = self.pos
 
         self.update_animation(dt)
 

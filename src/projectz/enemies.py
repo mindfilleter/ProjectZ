@@ -34,7 +34,7 @@ class Enemy(AnimatedSprite):
         # Get a new path to the player periodically
         if not self.path or random.randint(0, 100) < 2:  # 2% chance to recalculate path
             self.path = self.pathfinder.get_path(
-                self.rect.center, self.player.rect.center
+                self.rect.topleft, self.player.rect.topleft
             )
 
         is_moving = False
@@ -69,10 +69,10 @@ class Enemy(AnimatedSprite):
 
             if not self.collidable.check_collision(dx=movement.x, dy=movement.y):
                 self.pos += movement
-                self.rect.center = self.pos
+                self.rect.topleft = self.pos
         if not is_moving:
             self.state = "idle_down"
 
-        self.hurtbox.center = self.rect.center
+        self.hurtbox.topleft = self.rect.topleft
         self.update_animation(dt)
         super().update(dt)

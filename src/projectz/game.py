@@ -311,14 +311,12 @@ class ExploringState(GameState):
             # Get the camera's view rect
             camera_view = self.game.group.view
             # Translate the hitbox rect by the camera's view
-            display_hitbox = self.game.player.hitbox.move(-camera_view.x, -camera_view.y)
-            pygame.draw.rect(self.game.surface, (255, 0, 0, 150), display_hitbox)
-        
-        # Draw enemy hurtboxes
-        for enemy in self.game.enemy_group:
-            camera_view = self.game.group.view
-            display_hurtbox = enemy.hurtbox.move(-camera_view.x, -camera_view.y)
-            pygame.draw.rect(self.game.surface, (0, 0, 255, 150), display_hurtbox)
+            display_hitbox = self.game.player.hitbox.move(
+                -camera_view.x, -camera_view.y
+            )
+            pygame.draw.rect(
+                self.game.surface, (255, 0, 0, 150), display_hitbox
+            )
 
         self.game.hud.draw(self.game.surface)
 

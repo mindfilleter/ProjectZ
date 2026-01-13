@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Implement Phase 2 (Core Gameplay) from the Development Roadmap, focusing on the combat system, enemy AI, and interaction mechanics.
+## [~] Track: Implement Phase 2 (Core Gameplay) from the Development Roadmap, focusing on the combat system, enemy AI, and interaction mechanics.
 *Link: [./conductor/tracks/core_gameplay_20260113/](./conductor/tracks/core_gameplay_20260113/)*
