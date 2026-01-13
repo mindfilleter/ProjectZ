@@ -49,34 +49,6 @@ class Player(AnimatedSprite):
     def hit_points(self, value):
         self._hit_points = max(0, min(value, self.hit_point_max))
 
-    KEY_DIRECTION_MAP = {
-        pygame.K_d: "right",
-        pygame.K_a: "left",
-        pygame.K_w: "up",
-        pygame.K_s: "down",
-    }
-
-    def handle_event(self, pygame_event):
-        """
-        Handles a pygame event.
-
-        Args:
-            pygame_event: The event to handle.
-        """
-        if pygame_event.type not in (pygame.KEYDOWN, pygame.KEYUP):
-            return
-
-        direction = self.KEY_DIRECTION_MAP.get(pygame_event.key)
-        if not direction:
-            return
-
-        if pygame_event.type == pygame.KEYDOWN:
-            if direction not in self.move_dir:
-                self.move_dir.append(direction)
-        elif pygame_event.type == pygame.KEYUP:
-            if direction in self.move_dir:
-                self.move_dir.remove(direction)
-
     def is_adjacent_to(self, other_sprite):
         """
         Checks if the player is adjacent to another sprite and facing it.

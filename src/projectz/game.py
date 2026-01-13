@@ -24,6 +24,15 @@ from projectz.enemies import Enemy
 from projectz.hud import HUD
 from projectz.npc import WanderingNPC
 from projectz.player import Player
+from projectz.player_input import PlayerMovementConsumer
+from projectz.system_input import SystemEventConsumer
+from projectz.gamestates import GameStates
+from projectz.state_input import (
+    ExploringEventConsumer,
+    PausedEventConsumer,
+    InventoryEventConsumer,
+    DialogEventConsumer,
+)
 
 
 pygame.init()
@@ -31,36 +40,34 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
 
-class GameStates(enum.Enum):
-    Map = "Map"
-    Paused = "Paused"
-    Exploring = "Exploring"
-    Inventory = "Inventory"
-    Dialog = "Dialog"
-
-
 class GameState(abc.ABC):
     def __init__(self, game):
         self.game = game
 
     @abc.abstractmethod
-    def handle_input(self, pygame_event): ...
-
-    @abc.abstractmethod
-    def update(self): ...
+    def update(self, dt): ...
 
     @abc.abstractmethod
     def draw(self): ...
+
+    def on_enter(self):
+        """
+        Called when the game state is entered.
+        """
+        pass
+
+    def on_exit(self):
+        """
+        Called when the game state is exited.
+        """
+        pass
 
 
 class MapState(GameState):
     def __init__(self, game):
         super().__init__(game)
 
-    def handle_input(self, pygame_event):
-        pass
-
-    def update(self):
+    def update(self, dt):
         pass
 
     def draw(self):
@@ -75,13 +82,15 @@ class PausedState(GameState):
         self.text_rect = self.text.get_rect(
             center=(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 4)
         )
+        self.consumer = PausedEventConsumer(self.game)
 
-    def handle_input(self, pygame_event):
-        if pygame_event.type == pygame.KEYDOWN:
-            if pygame_event.key == pygame.K_p:
-                self.game.state = GameStates.Exploring
+    def on_enter(self):
+        self.game.register_consumer(pygame.KEYDOWN, self.consumer)
 
-    def update(self):
+    def on_exit(self):
+        self.game.unregister_consumer(pygame.KEYDOWN, self.consumer)
+
+    def update(self, dt):
         pass
 
     def draw(self):
@@ -107,7 +116,7 @@ class InventoryState(GameState):
                 1
             ] * self.space_size[1]
 
-        def update(self):
+        def update(self, dt):
             mousex, mousey = pygame.mouse.get_pos()
             if self.show == 1:
                 self.color = (0, 0, 255, self.show * 255)
@@ -123,6 +132,7 @@ class InventoryState(GameState):
 
     def __init__(self, game):
         super().__init__(game)
+        self.consumer = InventoryEventConsumer(self.game, self)
 
         # --- Inventory Setup ---
         self.image = pygame.Surface((200, 250)).convert_alpha()
@@ -133,34 +143,31 @@ class InventoryState(GameState):
             self.image.get_width() // self.rows,
             self.image.get_height() // self.cols,
         )
-
-        # FIX 1: I finished the coordinate numbers here.
-        # In your code it said "topleft=", which confuses Python.
         self.rect = self.image.get_rect(topleft=(20, 20))
-
-        # We can use Item here because we are still inside the __init__ function!
-
         self.items = []
 
-    def handle_input(self, pygame_event):
-        if pygame_event.type == pygame.KEYDOWN:
-            if pygame_event.key == pygame.K_e:
-                self.game.state = GameStates.Exploring
-            if pygame_event.key == pygame.K_a:
-                self.new_object = self.Item(
-                    (
-                        random.randint(0, self.rows - 1),
-                        random.randint(0, self.cols - 1),
-                    ),
-                    self.inv_space_size,
-                    self.rect,
-                )
-                self.items.append(self.new_object)
+    def on_enter(self):
+        self.game.register_consumer(pygame.KEYDOWN, self.consumer)
 
-    def update(self):
+    def on_exit(self):
+        self.game.unregister_consumer(pygame.KEYDOWN, self.consumer)
+
+    def add_random_item(self):
+        self.items.append(
+            self.Item(
+                (
+                    random.randint(0, self.rows - 1),
+                    random.randint(0, self.cols - 1),
+                ),
+                self.inv_space_size,
+                self.rect,
+            )
+        )
+
+    def update(self, dt):
         for item in self.items:
             if item.show == 1:
-                item.update()
+                item.update(dt)
         for item in self.items:
             if item in self.items:
                 item.show = 1
@@ -180,6 +187,7 @@ class DialogState(GameState):
     def __init__(self, game, npc):
         super().__init__(game)
         self.npc = npc
+        self.consumer = DialogEventConsumer(self.game, self.npc)
         self.font = pygame.font.Font(None, 24)
         self.text = self.font.render(
             self.npc.dialogs[0], True, (255, 255, 255)
@@ -204,15 +212,15 @@ class DialogState(GameState):
         self.chevron_visible = True
         self.chevron_timer = pygame.time.get_ticks()
 
-    def handle_input(self, pygame_event):
-        if pygame_event.type == pygame.KEYDOWN:
-            if pygame_event.key == pygame.K_RETURN:
-                self.npc.cycle_dialogs()
-                self.game.state = GameStates.Exploring
+    def on_enter(self):
+        self.game.register_consumer(pygame.KEYDOWN, self.consumer)
+
+    def on_exit(self):
+        self.game.unregister_consumer(pygame.KEYDOWN, self.consumer)
 
     def update(self, dt):
-            self.chevron_visible = not self.chevron_visible
-            self.chevron_timer = pygame.time.get_ticks()
+        self.chevron_visible = not self.chevron_visible
+        self.chevron_timer = pygame.time.get_ticks()
 
     def draw(self):
         self.game.game_states[GameStates.Exploring].draw()
@@ -227,16 +235,18 @@ class DialogState(GameState):
 class ExploringState(GameState):
     def __init__(self, game):
         super().__init__(game)
+        self.player_movement_consumer = PlayerMovementConsumer(self.game.player)
+        self.exploring_consumer = ExploringEventConsumer(self.game)
 
-    def handle_input(self, pygame_event):
-        self.game.player.handle_event(pygame_event)
-        if pygame_event.type == pygame.KEYDOWN:
-            if pygame_event.key == pygame.K_p:
-                self.game.state = GameStates.Paused
-            if pygame_event.key == pygame.K_e:
-                self.game.state = GameStates.Inventory
-            if pygame_event.key == pygame.K_RETURN:
-                self.check_for_dialog()
+    def on_enter(self):
+        self.game.register_consumer(pygame.KEYDOWN, self.player_movement_consumer)
+        self.game.register_consumer(pygame.KEYUP, self.player_movement_consumer)
+        self.game.register_consumer(pygame.KEYDOWN, self.exploring_consumer)
+
+    def on_exit(self):
+        self.game.unregister_consumer(pygame.KEYDOWN, self.player_movement_consumer)
+        self.game.unregister_consumer(pygame.KEYUP, self.player_movement_consumer)
+        self.game.unregister_consumer(pygame.KEYDOWN, self.exploring_consumer)
 
     def check_for_dialog(self):
         for npc in self.game.npc_group:
@@ -244,7 +254,7 @@ class ExploringState(GameState):
                 self.game.game_states[GameStates.Dialog] = DialogState(
                     self.game, npc
                 )
-                self.game.state = GameStates.Dialog
+                self.game.change_state(GameStates.Dialog)
                 break
 
     def update(self, dt):
@@ -278,7 +288,9 @@ class Game:
         self.config = config
         self.clock = time.Clock()
         self.running = True
-        self.state = GameStates.Exploring
+        self.state = None
+        self.event_consumers = {}
+
         self.game_states = {
             GameStates.Map: MapState(self),
             GameStates.Paused: PausedState(self),
@@ -304,6 +316,25 @@ class Game:
         self.hud = HUD(self.player)
 
         self.map = None
+
+        self.register_consumer(pygame.QUIT, SystemEventConsumer(self))
+
+    def register_consumer(self, event_type, consumer):
+        if event_type not in self.event_consumers:
+            self.event_consumers[event_type] = []
+        self.event_consumers[event_type].append(consumer)
+
+    def unregister_consumer(self, event_type, consumer):
+        if event_type in self.event_consumers:
+            if consumer in self.event_consumers[event_type]:
+                self.event_consumers[event_type].remove(consumer)
+
+    def change_state(self, new_state):
+        if self.state and self.game_states.get(self.state):
+            self.game_states[self.state].on_exit()
+        self.state = new_state
+        if self.game_states.get(self.state):
+            self.game_states[self.state].on_enter()
 
     def _reset_map_state(self):
         """
@@ -483,19 +514,20 @@ class Game:
         Starts the game loop.
         """
         self.change_map("map.tmx")
+        self.change_state(GameStates.Exploring)
 
         while self.running:
             dt = self.clock.tick(Game.TARGET_FPS) / 1000.0
 
             for pygame_event in event.get():
-                if pygame_event.type == pygame.QUIT:
-                    self.running = False
+                if pygame_event.type in self.event_consumers:
+                    for consumer in self.event_consumers[pygame_event.type]:
+                        consumer.handle_event(pygame_event)
 
-                self.game_states[self.state].handle_input(pygame_event)
-
-            self.game_states[self.state].update(dt)
-            if self.game_states[self.state]:
-                self.game_states[self.state].draw()
+            current_state = self.game_states.get(self.state)
+            if current_state:
+                current_state.update(dt)
+                current_state.draw()
 
             pygame.transform.scale(
                 self.surface, self.screen.get_size(), self.screen
