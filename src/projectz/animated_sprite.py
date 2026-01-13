@@ -5,12 +5,32 @@ from projectz.animation import Animation
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
-    def __init__(self, spritesheet_path, *groups):
+    def __init__(self, spritesheet_path, max_hp=100, *groups):
         super().__init__(*groups)
         self.spritesheet = self._load_spritesheet(spritesheet_path)
         self.animation = Animation.from_json(spritesheet_path, self.spritesheet)
         self.image = self.animation.image
         self.state = "idle_down"
+
+        self.max_hp = max_hp
+        self.current_hp = max_hp
+
+    def take_damage(self, amount):
+        """Reduces current HP by the given amount."""
+        self.current_hp -= amount
+        if self.current_hp < 0:
+            self.current_hp = 0
+
+    def heal(self, amount):
+        """Increases current HP by the given amount, up to max_hp."""
+        self.current_hp += amount
+        if self.current_hp > self.max_hp:
+            self.current_hp = self.max_hp
+
+    def is_dead(self):
+        """Returns True if current HP is 0 or less."""
+        return self.current_hp <= 0
+
 
     def _load_spritesheet(self, path):
         try:

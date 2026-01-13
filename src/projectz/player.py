@@ -23,14 +23,12 @@ class Player(AnimatedSprite):
         Args:
             *groups: The sprite groups to add the player to.
         """
-        super().__init__("player.png", *groups)
+        super().__init__("player.png", max_hp=4, *groups)
         # Using Vector2 for smooth floating point positioning
         self.pos = pygame.math.Vector2(tile_size, tile_size)
         self.vel = pygame.math.Vector2(0, 0)
         self.spd = 1
         self.friction = 0.7
-        self.hit_point_max = 4
-        self._hit_points = self.hit_point_max
         # Rect for drawing and collision (must be integer coordinates)
         self.rect = self.image.get_rect(topleft=(self.pos.x, self.pos.y))
         self.move_dir = []
@@ -41,13 +39,6 @@ class Player(AnimatedSprite):
     def give_item(self, key_item: KeyItems):
         self.inventory.add(key_item)
 
-    @property
-    def hit_points(self):
-        return self._hit_points
-
-    @hit_points.setter
-    def hit_points(self, value):
-        self._hit_points = max(0, min(value, self.hit_point_max))
 
     def is_adjacent_to(self, other_sprite):
         """
