@@ -254,7 +254,7 @@ class ExploringState(GameState):
             self.game, self.game.player
         )
         self.player_attack_consumer = PlayerAttackConsumer(
-            self.game, self.game.player
+            self.game, self.game.player, self.game.enemy_group
         )
         self.exploring_consumer = ExploringEventConsumer(self.game)
 

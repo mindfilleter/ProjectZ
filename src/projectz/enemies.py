@@ -20,6 +20,7 @@ class Enemy(AnimatedSprite):
 
         # 3. The 'rect' is used for positioning and collision checking.
         self.rect = self.image.get_rect(topleft=(int(self.pos.x), int(self.pos.y)))
+        self.hurtbox = self.rect.copy()
 
         self.player = player  # Store the player so we can chase them
         self.collidable = Collidable(game, self.pos.x, self.pos.y, self)
@@ -69,4 +70,5 @@ class Enemy(AnimatedSprite):
         if not is_moving:
             self.state = "idle_down"
 
+        self.hurtbox.center = self.rect.center
         self.update_animation(dt)

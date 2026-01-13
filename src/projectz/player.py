@@ -43,11 +43,30 @@ class Player(AnimatedSprite):
     def give_item(self, key_item: KeyItems):
         self.inventory.add(key_item)
 
-    def attack(self):
+    def attack(self, enemy_group):
         if not self.attacking:
             self.attacking = True
             self.attack_timer = pygame.time.get_ticks()
             self.state = f"attack_{self.facing}"
+
+            # Create hitbox based on facing direction
+            hitbox_size = (self.rect.width, self.rect.height)
+            hitbox_pos = list(self.rect.topleft)
+
+            if self.facing == "right":
+                hitbox_pos[0] += self.rect.width
+            elif self.facing == "left":
+                hitbox_pos[0] -= self.rect.width
+            elif self.facing == "up":
+                hitbox_pos[1] -= self.rect.height
+            elif self.facing == "down":
+                hitbox_pos[1] += self.rect.height
+
+            self.hitbox = pygame.Rect(hitbox_pos, hitbox_size)
+
+            for enemy in enemy_group:
+                if self.hitbox.colliderect(enemy.hurtbox):
+                    enemy.take_damage(1)
 
     def is_adjacent_to(self, other_sprite):
         """

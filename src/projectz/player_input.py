@@ -49,7 +49,7 @@ class PlayerAttackConsumer(EventConsumer):
     Handles player attack events.
     """
 
-    def __init__(self, game, player: Player):
+    def __init__(self, game, player: Player, enemy_group):
         """
         Initializes the player attack consumer.
 
@@ -58,6 +58,7 @@ class PlayerAttackConsumer(EventConsumer):
         """
         self.game = game
         self.player = player
+        self.enemy_group = enemy_group
 
     def handle_event(self, event: pygame.event.Event):
         """
@@ -73,4 +74,4 @@ class PlayerAttackConsumer(EventConsumer):
         if action != "talk/attack":
             return
 
-        self.player.attack()
+        self.player.attack(self.enemy_group)
