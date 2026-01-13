@@ -25,6 +25,7 @@ from projectz.player import Player
 from projectz.player_input import PlayerMovementConsumer, PlayerAttackConsumer
 from projectz.system_input import SystemEventConsumer
 from projectz.gamestates import GameStates
+from projectz.logger import logger
 from projectz.state_input import (
     ExploringEventConsumer,
     PausedEventConsumer,
@@ -305,7 +306,7 @@ class ExploringState(GameState):
         self.game.surface.fill((0, 0, 0))
         if self.game.group:
             self.game.group.draw(self.game.surface)
-            print(f"Camera View: {self.game.group.view.topleft}")
+            logger.debug(f"Camera View: {self.game.group.view.topleft}")
         if self.game.player.hitbox:
             # Get the camera's view rect
             camera_view = self.game.group.view
