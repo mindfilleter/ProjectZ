@@ -18,7 +18,7 @@ class InputManager:
         """
         self.key_map = DEFAULT_CONTROLS
         self.exploring_action_map = self._get_action_map(
-            ["up", "down", "left", "right", "action", "pause", "talk/attack"]
+            ["up", "down", "left", "right", "action", "pause"]
         )
         self.paused_action_map = self._get_action_map(["pause"])
         self.inventory_action_map = self._get_action_map(["action"])

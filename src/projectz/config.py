@@ -16,7 +16,6 @@ DEFAULT_CONTROLS = {
     "left": pygame.K_a,
     "right": pygame.K_d,
     "action": pygame.K_j,
-    "talk/attack": pygame.K_SPACE,
     "confirm": pygame.K_j,
     "cancel": pygame.K_k,
     "pause": pygame.K_p,

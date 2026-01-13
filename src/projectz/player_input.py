@@ -71,7 +71,7 @@ class PlayerAttackConsumer(EventConsumer):
             return
 
         action = input_manager.get_action(event, self.game.state)
-        if action != "talk/attack":
+        if action != "action":
             return
 
         self.player.attack(self.enemy_group)
