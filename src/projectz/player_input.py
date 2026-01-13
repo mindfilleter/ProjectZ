@@ -42,3 +42,35 @@ class PlayerMovementConsumer(EventConsumer):
         elif event.type == pygame.KEYUP:
             if direction in self.player.move_dir:
                 self.player.move_dir.remove(direction)
+
+
+class PlayerAttackConsumer(EventConsumer):
+    """
+    Handles player attack events.
+    """
+
+    def __init__(self, game, player: Player):
+        """
+        Initializes the player attack consumer.
+
+        Args:
+            player: The player to control.
+        """
+        self.game = game
+        self.player = player
+
+    def handle_event(self, event: pygame.event.Event):
+        """
+        Handles a pygame event.
+
+        Args:
+            event: The event to handle.
+        """
+        if event.type != pygame.KEYDOWN:
+            return
+
+        action = input_manager.get_action(event, self.game.state)
+        if action != "talk/attack":
+            return
+
+        self.player.attack()

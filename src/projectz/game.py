@@ -22,7 +22,7 @@ from projectz.enemies import Enemy
 from projectz.hud import HUD
 from projectz.npc import WanderingNPC
 from projectz.player import Player
-from projectz.player_input import PlayerMovementConsumer
+from projectz.player_input import PlayerMovementConsumer, PlayerAttackConsumer
 from projectz.system_input import SystemEventConsumer
 from projectz.gamestates import GameStates
 from projectz.state_input import (
@@ -253,6 +253,9 @@ class ExploringState(GameState):
         self.player_movement_consumer = PlayerMovementConsumer(
             self.game, self.game.player
         )
+        self.player_attack_consumer = PlayerAttackConsumer(
+            self.game, self.game.player
+        )
         self.exploring_consumer = ExploringEventConsumer(self.game)
 
     def on_enter(self):
@@ -261,6 +264,9 @@ class ExploringState(GameState):
         )
         self.game.register_consumer(
             pygame.KEYUP, self.player_movement_consumer
+        )
+        self.game.register_consumer(
+            pygame.KEYDOWN, self.player_attack_consumer
         )
         self.game.register_consumer(pygame.KEYDOWN, self.exploring_consumer)
 
@@ -271,6 +277,9 @@ class ExploringState(GameState):
         )
         self.game.unregister_consumer(
             pygame.KEYUP, self.player_movement_consumer
+        )
+        self.game.unregister_consumer(
+            pygame.KEYDOWN, self.player_attack_consumer
         )
         self.game.unregister_consumer(pygame.KEYDOWN, self.exploring_consumer)
 
