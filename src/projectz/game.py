@@ -306,7 +306,11 @@ class ExploringState(GameState):
         if self.game.group:
             self.game.group.draw(self.game.surface)
         if self.game.player.hitbox:
-            pygame.draw.rect(self.game.surface, (255, 0, 0, 150), self.game.player.hitbox)
+            # Get the camera's view rect
+            camera_view = self.game.group.view
+            # Translate the hitbox rect by the camera's view
+            display_hitbox = self.game.player.hitbox.move(-camera_view.x, -camera_view.y)
+            pygame.draw.rect(self.game.surface, (255, 0, 0, 150), display_hitbox)
         self.game.hud.draw(self.game.surface)
 
 
