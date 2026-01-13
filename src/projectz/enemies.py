@@ -72,3 +72,4 @@ class Enemy(AnimatedSprite):
 
         self.hurtbox.center = self.rect.center
         self.update_animation(dt)
+        super().update(dt)

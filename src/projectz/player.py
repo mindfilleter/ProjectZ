@@ -66,7 +66,7 @@ class Player(AnimatedSprite):
 
             for enemy in enemy_group:
                 if self.hitbox.colliderect(enemy.hurtbox):
-                    enemy.take_damage(1)
+                    enemy.take_damage(1, self)
 
     def is_adjacent_to(self, other_sprite):
         """
@@ -139,3 +139,4 @@ class Player(AnimatedSprite):
                 self.state = f"idle_{self.facing}"
 
         self.update_animation(dt)
+        super().update(dt)

@@ -15,11 +15,18 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.max_hp = max_hp
         self.current_hp = max_hp
 
-    def take_damage(self, amount):
+        self.knockback_speed = 10
+        self.knockback_duration = 100  # ms
+        self.knockback_timer = 0
+        self.knockback_direction = pygame.math.Vector2(0, 0)
+
+    def take_damage(self, amount, hitting_entity=None):
         """Reduces current HP by the given amount."""
         self.current_hp -= amount
         if self.current_hp < 0:
             self.current_hp = 0
+        if hitting_entity:
+            self.knockback(hitting_entity)
 
     def heal(self, amount):
         """Increases current HP by the given amount, up to max_hp."""
@@ -31,6 +38,11 @@ class AnimatedSprite(pygame.sprite.Sprite):
         """Returns True if current HP is 0 or less."""
         return self.current_hp <= 0
 
+    def knockback(self, hitting_entity):
+        self.knockback_timer = pygame.time.get_ticks()
+        self.knockback_direction = (
+            self.pos - hitting_entity.pos
+        ).normalize()
 
     def _load_spritesheet(self, path):
         try:
@@ -42,6 +54,14 @@ class AnimatedSprite(pygame.sprite.Sprite):
             spritesheet = pygame.Surface((32, 32), pygame.SRCALPHA)
             spritesheet.fill((255, 0, 0))
             return spritesheet
+
+    def update(self, dt):
+        # Apply knockback
+        now = pygame.time.get_ticks()
+        if now - self.knockback_timer < self.knockback_duration:
+            self.pos += self.knockback_direction * self.knockback_speed * dt
+
+        self.update_animation(dt)
 
     def update_animation(self, dt):
         if self.state != self.animation.state:
