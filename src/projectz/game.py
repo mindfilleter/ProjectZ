@@ -305,6 +305,7 @@ class ExploringState(GameState):
         self.game.surface.fill((0, 0, 0))
         if self.game.group:
             self.game.group.draw(self.game.surface)
+            print(f"Camera View: {self.game.group.view.topleft}")
         if self.game.player.hitbox:
             # Get the camera's view rect
             camera_view = self.game.group.view

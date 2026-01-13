@@ -27,6 +27,9 @@ class Enemy(AnimatedSprite):
         self.pathfinder = Pathfinder(game, self.pos.x, self.pos.y, self)
         self.path = []
 
+    def __repr__(self):
+        return f"<Enemy type={self.type} pos={self.pos}>"
+
     def update(self, dt, collision_rects):
         # Get a new path to the player periodically
         if not self.path or random.randint(0, 100) < 2:  # 2% chance to recalculate path

@@ -63,9 +63,14 @@ class Player(AnimatedSprite):
                 hitbox_pos[1] += self.rect.height
 
             self.hitbox = pygame.Rect(hitbox_pos, hitbox_size)
+            print(f"Player Rect: {self.rect}")
+            print(f"Attack Hitbox: {self.hitbox}")
 
             for enemy in enemy_group:
+                print(f"Checking collision with {enemy}")
+                print(f"Enemy Hurtbox: {enemy.hurtbox}")
                 if self.hitbox.colliderect(enemy.hurtbox):
+                    print("HIT!")
                     enemy.take_damage(1, self)
 
     def is_adjacent_to(self, other_sprite):
