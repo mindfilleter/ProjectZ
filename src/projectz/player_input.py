@@ -3,6 +3,7 @@ import pygame
 from projectz.event_consumer import EventConsumer
 from projectz.input import input_manager
 from projectz.player import Player
+from projectz import sfx
 
 
 class PlayerMovementConsumer(EventConsumer):
@@ -74,4 +75,5 @@ class PlayerAttackConsumer(EventConsumer):
         if action != "action":
             return
 
+        sfx.play_sfx("attack.mp3")
         self.player.attack(self.enemy_group)
