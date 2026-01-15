@@ -9,6 +9,9 @@ from projectz.common import Collidable, Pathfinder
 
 
 class Enemy(AnimatedSprite):
+    WANDER_RADIUS = 50
+    CHASE_RADIUS = 150
+
     def __init__(self, game, x, y, type, player):
         # 1. Initialize the base Sprite class
         super().__init__("slimes.png")
@@ -27,10 +30,68 @@ class Enemy(AnimatedSprite):
         self.pathfinder = Pathfinder(game, self.pos.x, self.pos.y, self)
         self.path = []
 
+        self.state = "wandering"
+        self.wander_target = None
+
     def __repr__(self):
         return f"<Enemy type={self.type} pos={self.pos}>"
 
     def update(self, dt, collision_rects):
+        player_dist = self.pos.distance_to(self.player.pos)
+
+        if self.state == "wandering":
+            if player_dist < self.CHASE_RADIUS:
+                self.state = "chasing"
+            else:
+                self.wander()
+        elif self.state == "chasing":
+            if player_dist > self.CHASE_RADIUS * 1.2:  # A little buffer to prevent rapid state changes
+                self.state = "wandering"
+                self.path = []
+            else:
+                self.chase()
+        
+        self.hurtbox.topleft = self.rect.topleft
+        self.update_animation(dt)
+        super().update(dt)
+
+    def wander(self):
+        is_moving = False
+        if self.wander_target:
+            is_moving = True
+            direction = self.wander_target - self.pos
+            if direction.length() < 2:
+                self.wander_target = None
+            else:
+                if direction.length() > 0:
+                    direction.normalize_ip()
+
+                if abs(direction.x) > abs(direction.y):
+                    if direction.x > 0:
+                        self.state = "walk_right"
+                    else:
+                        self.state = "walk_left"
+                else:
+                    if direction.y > 0:
+                        self.state = "walk_down"
+                    else:
+                        self.state = "walk_up"
+
+                movement = direction * self.spd
+                if not self.collidable.check_collision(dx=movement.x, dy=movement.y):
+                    self.pos += movement
+                    self.rect.topleft = self.pos
+
+        if not self.wander_target and random.randint(0, 100) < 2: # 2% chance to pick a new target
+            self.wander_target = self.pos + pygame.math.Vector2(
+                random.randint(-self.WANDER_RADIUS, self.WANDER_RADIUS),
+                random.randint(-self.WANDER_RADIUS, self.WANDER_RADIUS),
+            )
+        
+        if not is_moving:
+            self.state = "idle_down"
+
+    def chase(self):
         # Get a new path to the player periodically
         if not self.path or random.randint(0, 100) < 2:  # 2% chance to recalculate path
             self.path = self.pathfinder.get_path(
@@ -72,7 +133,3 @@ class Enemy(AnimatedSprite):
                 self.rect.topleft = self.pos
         if not is_moving:
             self.state = "idle_down"
-
-        self.hurtbox.topleft = self.rect.topleft
-        self.update_animation(dt)
-        super().update(dt)
