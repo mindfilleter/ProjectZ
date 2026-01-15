@@ -34,11 +34,11 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 - [x] **Task:** Implement trigger zones or objects on the map that initiate a map transition when the player enters them. [ee903f2]
 - [x] **Task:** Conductor - User Manual Verification 'World Interaction' (Protocol in workflow.md) [dca6647]
 
-## Phase 4: Backend & Integration
+## Phase 4: Backend & Integration [checkpoint: aa60534]
 
 *Objective: Set up the inventory data structure and integrate all new systems.*
 
 - [x] **Task:** Create a simple Python class or dictionary to manage player inventory data (e.g., `player.inventory['rupees']`). [7b52fa5]
 - [x] **Task:** Integrate the new combat, AI, and interaction systems into the main game loop. [9bd50d6]
 - [x] **Task:** Place a few test enemies and an NPC on a map to verify all systems work together correctly. [7b790c3]
-- [ ] **Task:** Conductor - User Manual Verification 'Backend & Integration' (Protocol in workflow.md)
+- [x] **Task:** Conductor - User Manual Verification 'Backend & Integration' (Protocol in workflow.md) [aa60534]
