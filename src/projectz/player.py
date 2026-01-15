@@ -25,6 +25,7 @@ class Player(AnimatedSprite):
             *groups: The sprite groups to add the player to.
         """
         super().__init__("player.png", max_hp=4, *groups)
+        self.invulnerability_duration = 1000  # ms
         # Using Vector2 for smooth floating point positioning
         self.pos = pygame.math.Vector2(tile_size, tile_size)
         self.vel = pygame.math.Vector2(0, 0)
@@ -101,6 +102,9 @@ class Player(AnimatedSprite):
         Args:
             collision_rects: A list of rects to check for collisions.
         """
+        if self.is_dead():
+            self.current_hp = self.max_hp
+
         now = pygame.time.get_ticks()
 
         # Cooldown attack

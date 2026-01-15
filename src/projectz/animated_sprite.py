@@ -15,16 +15,27 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.max_hp = max_hp
         self.current_hp = max_hp
 
-        self.knockback_speed = 10
-        self.knockback_duration = 100  # ms
+        self.knockback_speed = 50
+        self.knockback_duration = 200  # ms
         self.knockback_timer = 0
         self.knockback_direction = pygame.math.Vector2(0, 0)
 
+        self.is_invulnerable = False
+        self.invulnerability_duration = 500 # ms
+        self.invulnerability_timer = 0
+
     def take_damage(self, amount, hitting_entity=None):
         """Reduces current HP by the given amount."""
+        if self.is_invulnerable:
+            return
+            
         self.current_hp -= amount
         if self.current_hp < 0:
             self.current_hp = 0
+        
+        self.is_invulnerable = True
+        self.invulnerability_timer = pygame.time.get_ticks()
+
         if hitting_entity:
             self.knockback(hitting_entity)
 
@@ -56,13 +67,26 @@ class AnimatedSprite(pygame.sprite.Sprite):
             return spritesheet
 
     def update(self, dt):
-        # Apply knockback
         now = pygame.time.get_ticks()
+
+        # Apply knockback
         if now - self.knockback_timer < self.knockback_duration:
             self.pos += self.knockback_direction * self.knockback_speed * dt
             self.rect.topleft = self.pos
 
         self.update_animation(dt)
+
+        # Apply flashing effect
+        if self.is_invulnerable:
+            if now - self.invulnerability_timer > self.invulnerability_duration:
+                self.is_invulnerable = False
+                self.image.set_alpha(255)
+            else:
+                alpha = 255 if (now // 100) % 2 == 0 else 0
+                self.image.set_alpha(alpha)
+        else:
+            self.image.set_alpha(255)
+
 
     def update_animation(self, dt):
         if self.state != self.animation.state:
