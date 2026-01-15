@@ -24,7 +24,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 - [x] **Task:** Create the logic for enemies to transition between "wandandering" and "chase" states based on player proximity. [c517f56]
 - [x] **Task:** Conductor - User Manual Verification 'Enemy AI & Behavior' (Protocol in workflow.md) [8df19d7]
 
-## Phase 3: World Interaction
+## Phase 3: World Interaction [checkpoint: dca6647]
 
 *Objective: Enable player interaction with NPCs and the environment.*
 
@@ -32,7 +32,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 - [x] **Task:** Create a "typing effect" for text appearing in the dialogue box. [695ec96]
 - [x] **Task:** Develop an interaction system that triggers dialogue when the player is near an NPC and presses an action button. [57d223d]
 - [x] **Task:** Implement trigger zones or objects on the map that initiate a map transition when the player enters them. [ee903f2]
-- [ ] **Task:** Conductor - User Manual Verification 'World Interaction' (Protocol in workflow.md)
+- [x] **Task:** Conductor - User Manual Verification 'World Interaction' (Protocol in workflow.md) [dca6647]
 
 ## Phase 4: Backend & Integration
 
