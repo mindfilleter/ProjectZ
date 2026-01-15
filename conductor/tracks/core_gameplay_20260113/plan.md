@@ -31,7 +31,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 - [x] **Task:** Design and implement a UI element for displaying dialogue boxes. [ab52435]
 - [x] **Task:** Create a "typing effect" for text appearing in the dialogue box. [695ec96]
 - [x] **Task:** Develop an interaction system that triggers dialogue when the player is near an NPC and presses an action button. [57d223d]
-- [ ] **Task:** Implement trigger zones or objects on the map that initiate a map transition when the player enters them.
+- [x] **Task:** Implement trigger zones or objects on the map that initiate a map transition when the player enters them. [ee903f2]
 - [ ] **Task:** Conductor - User Manual Verification 'World Interaction' (Protocol in workflow.md)
 
 ## Phase 4: Backend & Integration
