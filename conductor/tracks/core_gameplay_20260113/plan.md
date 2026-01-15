@@ -20,7 +20,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 *Objective: Bring enemies to life with basic AI and movement.*
 
 - [x] **Task:** Implement a "wandering" state for enemies, causing them to move randomly within a defined radius. [c517f56]
-- [ ] **Task:** Implement a "chase" state that uses simple pathfinding (e.g., A* or direct line-of-sight movement) to move towards the player.
+- [x] **Task:** Implement a "chase" state that uses simple pathfinding (e.g., A* or direct line-of-sight movement) to move towards the player. [c517f56]
 - [ ] **Task:** Create the logic for enemies to transition between "wandering" and "chase" states based on player proximity.
 - [ ] **Task:** Conductor - User Manual Verification 'Enemy AI & Behavior' (Protocol in workflow.md)
 
