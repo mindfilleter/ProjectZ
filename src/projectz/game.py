@@ -191,8 +191,16 @@ class DialogState(GameState):
         self.consumer = DialogEventConsumer(self.game, self)
         self.font = pygame.font.Font(None, 24)
         self.dialog_index = 0
-        self.text = None
+        self.text_surface = None
         self.text_rect = None
+        
+        self.full_text = self.npc.dialogs[self.dialog_index]
+        self.displayed_text = ""
+        self.char_index = 0
+        self.typing_speed = 50  # milliseconds per character
+        self.last_char_time = pygame.time.get_ticks()
+        self.typing_finished = False
+
         self._render_text()
 
         self.dialog_box = pygame.Rect(
@@ -210,10 +218,8 @@ class DialogState(GameState):
         self.chevron_timer = pygame.time.get_ticks()
 
     def _render_text(self):
-        self.text = self.font.render(
-            self.npc.dialogs[self.dialog_index], True, (255, 255, 255)
-        )
-        self.text_rect = self.text.get_rect(
+        self.text_surface = self.font.render(self.displayed_text, True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(
             center=(
                 SCREEN_WIDTH // 4,
                 SCREEN_HEIGHT // 4,
@@ -221,8 +227,19 @@ class DialogState(GameState):
         )
 
     def advance_dialog(self):
+        if not self.typing_finished:
+            self.typing_finished = True
+            self.displayed_text = self.full_text
+            self._render_text()
+            self.text_rect.center = self.dialog_box.center
+            return
+
         self.dialog_index += 1
         if self.dialog_index < len(self.npc.dialogs):
+            self.full_text = self.npc.dialogs[self.dialog_index]
+            self.displayed_text = ""
+            self.char_index = 0
+            self.typing_finished = False
             self._render_text()
             self.text_rect.center = self.dialog_box.center
         else:
@@ -235,16 +252,29 @@ class DialogState(GameState):
         self.game.unregister_consumer(pygame.KEYDOWN, self.consumer)
 
     def update(self, dt):
-        self.chevron_visible = not self.chevron_visible
-        self.chevron_timer = pygame.time.get_ticks()
+        now = pygame.time.get_ticks()
+        if not self.typing_finished and now - self.last_char_time > self.typing_speed:
+            if self.char_index < len(self.full_text):
+                self.displayed_text += self.full_text[self.char_index]
+                self.char_index += 1
+                self._render_text()
+                self.text_rect.center = self.dialog_box.center
+                self.last_char_time = now
+            else:
+                self.typing_finished = True
+
+        if self.typing_finished:
+            if now - self.chevron_timer > 500: # Blink speed
+                self.chevron_visible = not self.chevron_visible
+                self.chevron_timer = now
 
     def draw(self):
         self.game.game_states[GameStates.Exploring].draw()
         pygame.draw.rect(
             self.game.surface, (0, 0, 0), self.dialog_box, border_radius=5
         )
-        self.game.surface.blit(self.text, self.text_rect)
-        if self.chevron_visible:
+        self.game.surface.blit(self.text_surface, self.text_rect)
+        if self.typing_finished and self.chevron_visible:
             self.game.surface.blit(self.chevron, self.chevron_rect)
 
 
