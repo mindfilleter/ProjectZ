@@ -15,14 +15,14 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 - [x] **Task:** Develop a knockback function that applies a brief, opposing force to an entity upon being hit. [bfc895c]
 - [x] **Task:** Conductor - User Manual Verification 'Combat System Foundation' (Protocol in workflow.md) [9686dbe]
 
-## Phase 2: Enemy AI & Behavior
+## Phase 2: Enemy AI & Behavior [checkpoint: 8df19d7]
 
 *Objective: Bring enemies to life with basic AI and movement.*
 
 - [x] **Task:** Implement a "wandering" state for enemies, causing them to move randomly within a defined radius. [c517f56]
 - [x] **Task:** Implement a "chase" state that uses simple pathfinding (e.g., A* or direct line-of-sight movement) to move towards the player. [c517f56]
 - [x] **Task:** Create the logic for enemies to transition between "wandandering" and "chase" states based on player proximity. [c517f56]
-- [ ] **Task:** Conductor - User Manual Verification 'Enemy AI & Behavior' (Protocol in workflow.md)
+- [x] **Task:** Conductor - User Manual Verification 'Enemy AI & Behavior' (Protocol in workflow.md) [8df19d7]
 
 ## Phase 3: World Interaction
 
