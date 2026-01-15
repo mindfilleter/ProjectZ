@@ -28,7 +28,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 
 *Objective: Enable player interaction with NPCs and the environment.*
 
-- [ ] **Task:** Design and implement a UI element for displaying dialogue boxes.
+- [x] **Task:** Design and implement a UI element for displaying dialogue boxes. [ab52435]
 - [ ] **Task:** Create a "typing effect" for text appearing in the dialogue box.
 - [ ] **Task:** Develop an interaction system that triggers dialogue when the player is near an NPC and presses an action button.
 - [ ] **Task:** Implement trigger zones or objects on the map that initiate a map transition when the player enters them.
