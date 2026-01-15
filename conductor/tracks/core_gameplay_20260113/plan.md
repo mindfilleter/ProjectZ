@@ -4,7 +4,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 
 ---
 
-## Phase 1: Combat System Foundation
+## Phase 1: Combat System Foundation [checkpoint: 9686dbe]
 
 *Objective: Build the fundamental components of the combat system.*
 
@@ -13,7 +13,7 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 - [x] **Task:** Add `HurtboxComponent` to enemies to detect collisions with the player's attack hitbox. [622e377]
 - [x] **Task:** Implement a basic damage calculation system when a hitbox and hurtbox overlap. [622e377]
 - [x] **Task:** Develop a knockback function that applies a brief, opposing force to an entity upon being hit. [bfc895c]
-- [ ] **Task:** Conductor - User Manual Verification 'Combat System Foundation' (Protocol in workflow.md)
+- [x] **Task:** Conductor - User Manual Verification 'Combat System Foundation' (Protocol in workflow.md) [9686dbe]
 
 ## Phase 2: Enemy AI & Behavior
 
