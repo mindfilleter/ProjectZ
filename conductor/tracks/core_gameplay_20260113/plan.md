@@ -39,6 +39,6 @@ This plan outlines the phases and tasks required to implement the core gameplay 
 *Objective: Set up the inventory data structure and integrate all new systems.*
 
 - [x] **Task:** Create a simple Python class or dictionary to manage player inventory data (e.g., `player.inventory['rupees']`). [7b52fa5]
-- [ ] **Task:** Integrate the new combat, AI, and interaction systems into the main game loop.
+- [x] **Task:** Integrate the new combat, AI, and interaction systems into the main game loop. [9bd50d6]
 - [ ] **Task:** Place a few test enemies and an NPC on a map to verify all systems work together correctly.
 - [ ] **Task:** Conductor - User Manual Verification 'Backend & Integration' (Protocol in workflow.md)
