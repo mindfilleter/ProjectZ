@@ -23,14 +23,13 @@ class Game:
         for s in self.scenes:
             if isinstance(s, scene_cls):
                 self._next_scene = s
+                if self.current_scene is None:
+                    self.current_scene = s
                 return
         raise ValueError(f"Scene not found:  {str(scene_cls)}")
 
     def main_loop(self) -> None:
         try:
-            if self._next_scene is not None and self.current_scene is not self._next_scene:
-                self.current_scene = self._next_scene
-
             while self.current_scene is not None:
                 self.current_scene.update(self.clock.tick(60))
                 for e in event.get():
