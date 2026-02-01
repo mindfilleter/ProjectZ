@@ -23,13 +23,13 @@ class TestStateMachine:
     def test_add_transitions(self) -> None:
         owner = mock.Mock()
         machine = fsm.StateMachine(owner, MockState)
-        machine.add_transitions({MockState: {AnotherState}})
+        machine.add_transitions((MockState, {AnotherState}))
         assert machine._transitions[MockState] == {AnotherState}
 
     def test_change_state(self) -> None:
         owner = mock.Mock()
         machine = fsm.StateMachine(owner, MockState)
-        machine.add_transitions({MockState: {AnotherState}})
+        machine.add_transitions((MockState, {AnotherState}))
         with (
             mock.patch.object(MockState, "exit") as mock_exit,
             mock.patch.object(AnotherState, "enter") as mock_enter,
@@ -55,6 +55,23 @@ class TestStateMachine:
     def test_add_transitions_multiple(self) -> None:
         owner = mock.Mock()
         machine = fsm.StateMachine(owner, MockState)
-        machine.add_transitions({MockState: {AnotherState}})
-        machine.add_transitions({MockState: {MockState}})
+        machine.add_transitions((MockState, {AnotherState}))
+        machine.add_transitions((MockState, {MockState}))
         assert machine._transitions[MockState] == {AnotherState, MockState}
+
+    def test_add_transitions_duplicate(self) -> None:
+        owner = mock.Mock()
+        machine = fsm.StateMachine(owner, MockState)
+        machine.add_transitions((MockState, {AnotherState}))
+        with pytest.raises(ValueError):
+            machine.add_transitions((MockState, {AnotherState}))
+
+    def test_add_transitions_multiple_in_one_call(self) -> None:
+        owner = mock.Mock()
+        machine = fsm.StateMachine(owner, MockState)
+        machine.add_transitions(
+            (MockState, {AnotherState}),
+            (AnotherState, {MockState}),
+        )
+        assert machine._transitions[MockState] == {AnotherState}
+        assert machine._transitions[AnotherState] == {MockState}

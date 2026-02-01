@@ -1,0 +1,6 @@
+# def get_image(image_name: str) -> surface.Surface:
+#     ...
+#
+#
+# def get_sound(sound_name: str) -> mixer.Sound:
+#     ...
