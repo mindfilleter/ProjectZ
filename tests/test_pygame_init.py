@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from typing import Generator
 
 import pygame
 from pygame import sprite
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
 
 
 def test_pygame_session_initialization(
-    pygame_session: "Generator[None, None, None]",
+    pygame_session: Generator[None, None, None],
 ) -> None:
     """
     Tests that the pygame_session fixture initializes pygame successfully.
