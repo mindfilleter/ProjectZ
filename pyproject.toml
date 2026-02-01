@@ -47,7 +47,10 @@ strict = true
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=src/projectz --cov-branch --cov-fail-under=85 --color=no"
+addopts = "--cov --cov-branch --cov-fail-under=85 --color=no"
+
+[tool.coverage.run]
+source = ["src/projectz"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
