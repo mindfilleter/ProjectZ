@@ -1,84 +1,347 @@
+"""
+Finite State Machine (FSM) Module.
+
+This module provides a flexible FSM implementation that supports two usage patterns:
+1. Object-Oriented: Using concrete ``State`` classes and a ``StateMachine`` engine.
+2. Declarative Mixin: Using the ``FSMMixin`` and decorators to define state logic
+   directly within the consuming class.
+
+:author: Gemini
+:license: MIT
+"""
+
 import logging
-from typing import Any
-from typing import Dict
-from typing import Set
-from typing import Tuple
-from typing import Type
+import inspect
+from enum import Enum
+from typing import Any, Dict, List, Set, Tuple, Callable, Type, Union, Optional
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(message)s")
+
+StateID = Union[Enum, Type, str]
 
 
 class State:
-    """Base class for FSM states."""
+    """
+    Base class for FSM states in the Object-Oriented style.
 
-    def enter(self, obj: Any) -> None:
-        """Called when entering the state."""
+    Subclasses should override the lifecycle methods to implement behavior.
+    """
+
+    def enter(self, owner: Any) -> None:
+        """
+        Called once when the state machine enters this state.
+
+        :param owner: The object (actor/entity) that owns this FSM.
+        :type owner: Any
+        """
         pass
 
-    def update(self, obj: Any, dt: float) -> None:
-        """Called every frame/tick."""
+    def update(self, owner: Any, dt: float) -> None:
+        """
+        Called every frame or tick while this state is active.
+
+        :param owner: The object (actor/entity) that owns this FSM.
+        :type owner: Any
+        :param dt: Delta time since the last frame.
+        :type dt: float
+        """
         pass
 
-    def exit(self, obj: Any) -> None:
-        """Called when exiting the state."""
+    def exit(self, owner: Any) -> None:
+        """
+        Called once when the state machine exits this state.
+
+        :param owner: The object (actor/entity) that owns this FSM.
+        :type owner: Any
+        """
         pass
 
 
 class StateMachine:
-    def __init__(self, owner: Any, initial_state: Type[State]):
-        self.owner = owner
-        # Internal map: { FromStateClass: {ToStateClass, ...} }
-        self._transitions: Dict[Type[State], Set[Type[State]]] = {}
+    """
+    A concrete StateMachine engine that manages state transitions and updates.
 
-        self.current_state = initial_state()
-        logger.debug("FSM Initialized for %s in state %s", self.owner, initial_state.__name__)
-        self.current_state.enter(self.owner)
+    This class can be used standalone by creating ``State`` subclasses, or
+    via the ``FSMMixin`` which wraps this engine.
+    """
 
-    def add_transitions(self, *transitions: Tuple[Type[State], Set[Type[State]]]) -> None:
+    def __init__(self, owner: Any, initial_state: StateID = None):
         """
-        Accepts any number of (from_state, {to_states}) tuples.
-        Raises ValueError if a transition from->to is already defined.
+        Initialize the StateMachine.
 
-        Example:
-            fsm.add_transitions(
-                (Idle, {Walk, Jump}),
-                (Walk, {Idle})
-            )
+        :param owner: The object that this state machine controls.
+        :type owner: Any
+        :param initial_state: The optional starting state. If provided,
+                              ``change_state`` is called immediately.
+        :type initial_state: StateID, optional
+        """
+        self.owner = owner
+        self._transitions: Dict[StateID, Set[StateID]] = {}
+
+        self._current_state_id: StateID = None
+        self._current_state_handler: Optional[State] = None
+
+        self._state_registry: Dict[StateID, State] = {}
+
+        if initial_state:
+            self.change_state(initial_state)
+
+    def add_transitions(self, transitions: List[Tuple[StateID, Set[StateID]]]) -> None:
+        """
+        Register valid transitions between states.
+
+        :param transitions: A list of tuples, where each tuple contains a source
+                            state and a set of allowed destination states.
+        :type transitions: List[Tuple[StateID, Set[StateID]]]
+        :raises ValueError: If a duplicate transition definition is detected.
         """
         for from_state, to_states in transitions:
-            existing = self._transitions.get(from_state, set())
-            # Check for overlapping transitions
-            duplicates = existing.intersection(to_states)
+            if from_state in self._transitions:
+                existing = self._transitions[from_state]
+                duplicates = existing.intersection(to_states)
+                if duplicates:
+                    raise ValueError(f"Duplicate FSM transitions for {from_state}: {duplicates}")
+                existing.update(to_states)
+            else:
+                self._transitions[from_state] = set(to_states)
 
-            if duplicates:
-                dup_names = ", ".join(s.__name__ for s in duplicates)
+    def register_state(self, state_id: StateID, state_instance: State) -> None:
+        """
+        Register a pre-instantiated state object for a specific ID.
+
+        This is primarily used by the ``FSMMixin`` to register adapter states,
+        or for singleton state management.
+
+        :param state_id: The identifier for the state.
+        :type state_id: StateID
+        :param state_instance: The concrete State object instance.
+        :type state_instance: State
+        """
+        self._state_registry[state_id] = state_instance
+
+    def change_state(self, new_state_id: StateID) -> None:
+        """
+        Transition from the current state to a new state.
+
+        Performs validation against the registered transition graph.
+        Triggers ``exit()`` on the old state and ``enter()`` on the new state.
+
+        :param new_state_id: The target state identifier.
+        :type new_state_id: StateID
+        :raises ValueError: If the transition is not allowed defined in ``add_transitions``.
+        """
+        if self._current_state_id is not None:
+            allowed = self._transitions.get(self._current_state_id, set())
+            if new_state_id not in allowed:
                 raise ValueError(
-                    f"Duplicate transitions detected for {from_state.__name__}: "
-                    f"Already allowed to transition to: {{{dup_names}}}"
+                    f"Invalid FSM transition for {self.owner}: "
+                    f"{self._get_name(self._current_state_id)} -> {self._get_name(new_state_id)}"
                 )
 
-            # If valid, update the mapping
-            self._transitions.setdefault(from_state, set()).update(to_states)
+            if self._current_state_handler:
+                self._current_state_handler.exit(self.owner)
 
-    def change_state(self, new_state_class: Type[State]) -> None:
-        """Performs a transition to a new state class if allowed."""
-        current_class = self.current_state.__class__
-        allowed = self._transitions.get(current_class, set())
-
-        if new_state_class not in allowed:
-            raise ValueError(
-                f"Invalid transition for {self.owner}: "
-                f"{current_class.__name__} -> {new_state_class.__name__}"
-            )
-
-        logger.debug(
-            "%s transition: %s -> %s", self.owner, current_class.__name__, new_state_class.__name__
+        logger.info(
+            f"FSM Transition: {self._get_name(self._current_state_id)} -> {self._get_name(new_state_id)}"
         )
 
-        self.current_state.exit(self.owner)
-        self.current_state = new_state_class()
-        self.current_state.enter(self.owner)
+        handler = self._resolve_state_handler(new_state_id)
+
+        self._current_state_id = new_state_id
+        self._current_state_handler = handler
+
+        if self._current_state_handler:
+            self._current_state_handler.enter(self.owner)
 
     def update(self, dt: float) -> None:
-        """Updates the current active state."""
-        self.current_state.update(self.owner, dt)
+        """
+        Trigger the update loop for the current state.
+
+        :param dt: Delta time.
+        :type dt: float
+        """
+        if self._current_state_handler:
+            self._current_state_handler.update(self.owner, dt)
+
+    def _resolve_state_handler(self, state_id: StateID) -> State:
+        if state_id in self._state_registry:
+            return self._state_registry[state_id]
+
+        if isinstance(state_id, type) and issubclass(state_id, State):
+            return state_id()
+
+        raise ValueError(f"Could not resolve a State Handler for state ID: {state_id}")
+
+    def _get_name(self, state_id: StateID) -> str:
+        if state_id is None:
+            return "None"
+        if isinstance(state_id, Enum):
+            return state_id.name
+        if hasattr(state_id, "__name__"):
+            return state_id.__name__
+        return str(state_id)
+
+    @property
+    def current_state(self) -> StateID:
+        """
+        Get the identifier of the currently active state.
+
+        :return: The current state identifier.
+        :rtype: StateID
+        """
+        return self._current_state_id
+
+
+def on_fsm_enter(state: StateID) -> Callable:
+    """
+    Decorator to register a method as the ENTER handler for a specific state.
+
+    :param state: The state identifier associated with this handler.
+    :type state: StateID
+    """
+
+    def decorator(func):
+        if not hasattr(func, "_fsm_meta"):
+            func._fsm_meta = []
+        func._fsm_meta.append(("enter", state))
+        return func
+
+    return decorator
+
+
+def on_fsm_exit(state: StateID) -> Callable:
+    """
+    Decorator to register a method as the EXIT handler for a specific state.
+
+    :param state: The state identifier associated with this handler.
+    :type state: StateID
+    """
+
+    def decorator(func):
+        if not hasattr(func, "_fsm_meta"):
+            func._fsm_meta = []
+        func._fsm_meta.append(("exit", state))
+        return func
+
+    return decorator
+
+
+def on_fsm_update(state: StateID) -> Callable:
+    """
+    Decorator to register a method as the UPDATE handler for a specific state.
+
+    :param state: The state identifier associated with this handler.
+    :type state: StateID
+    """
+
+    def decorator(func):
+        if not hasattr(func, "_fsm_meta"):
+            func._fsm_meta = []
+        func._fsm_meta.append(("update", state))
+        return func
+
+    return decorator
+
+
+class _MethodAdapterState(State):
+    """
+    Internal Adapter to wrap method callbacks into a State object.
+    """
+
+    def __init__(self):
+        self.enter_fn = None
+        self.exit_fn = None
+        self.update_fn = None
+
+    def enter(self, owner: Any) -> None:
+        if self.enter_fn:
+            self.enter_fn()
+
+    def exit(self, owner: Any) -> None:
+        if self.exit_fn:
+            self.exit_fn()
+
+    def update(self, owner: Any, dt: float) -> None:
+        if self.update_fn:
+            self.update_fn(dt)
+
+
+class FSMMixin:
+    """
+    A Mixin that adds declarative FSM capabilities to a class.
+
+    It automatically inspects methods decorated with ``@on_fsm_...`` and
+    builds the underlying ``StateMachine``.
+
+    **Usage:**
+    1. Inherit from ``FSMMixin``.
+    2. Define ``fsm_transitions`` and ``fsm_initial_state``.
+    3. Decorate methods to handle state logic.
+    """
+
+    fsm_transitions: List[Tuple[StateID, Set[StateID]]] = []
+    fsm_initial_state: StateID = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fsm = StateMachine(self)
+
+        self._fsm_build_graph()
+
+        if self.fsm_initial_state:
+            self.fsm.change_state(self.fsm_initial_state)
+        else:
+            logger.warning(f"No initial state defined for {self.__class__.__name__}")
+
+    def _fsm_build_graph(self) -> None:
+        self.fsm.add_transitions(self.fsm_transitions)
+
+        handlers: Dict[StateID, _MethodAdapterState] = {}
+
+        members = inspect.getmembers(self, predicate=inspect.ismethod)
+        for _, method in members:
+            if hasattr(method, "_fsm_meta"):
+                for event_type, state_id in method._fsm_meta:
+                    if state_id not in handlers:
+                        handlers[state_id] = _MethodAdapterState()
+
+                    adapter = handlers[state_id]
+                    if event_type == "enter":
+                        adapter.enter_fn = method
+                    elif event_type == "exit":
+                        adapter.exit_fn = method
+                    elif event_type == "update":
+                        adapter.update_fn = method
+
+        for state_id, adapter in handlers.items():
+            self.fsm.register_state(state_id, adapter)
+
+    def change_state(self, new_state: StateID) -> None:
+        """
+        Change the current state of the FSM.
+
+        :param new_state: The target state identifier.
+        :type new_state: StateID
+        """
+        self.fsm.change_state(new_state)
+
+    def update_fsm(self, dt: float) -> None:
+        """
+        Update the FSM. Should be called every frame.
+
+        :param dt: Delta time.
+        :type dt: float
+        """
+        self.fsm.update(dt)
+
+    @property
+    def current_state(self) -> StateID:
+        """
+        Get the current active state.
+
+        :return: The current state identifier.
+        :rtype: StateID
+        """
+        return self.fsm.current_state
