@@ -34,6 +34,8 @@ class Entity(sprite.Sprite, Mapping[Type[Component], Component]):
         self, *groups: sprite.AbstractGroup["Entity"], components: Optional[List[Component]] = None
     ):
         super().__init__(*groups)
+        # super(Mapping, self).__init__()
+
         self._components: List[Component] = []
 
         logger.debug("Initializing Entity %s", self)
@@ -64,6 +66,12 @@ class Entity(sprite.Sprite, Mapping[Type[Component], Component]):
         if not isinstance(key, type):
             return False
         return any(isinstance(c, key) for c in self._components)
+
+    def __eq__(self, other: object) -> bool:
+        return object.__eq__(self, other)
+
+    def __hash__(self) -> int:
+        return object.__hash__(self)
 
     def update(self, dt: int) -> None:
         for component in self._components:

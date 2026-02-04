@@ -14,10 +14,10 @@ def test_game_initialization() -> None:
     """
     clock = time.Clock()
     g = game.Game(clock)
-    assert g.scenes == []
+    assert g.scenes == {}
 
 
-def test_main_loop_exit() -> None:
+def test_main_loop_exit(pygame_session: None) -> None:
     """
     Tests that the main_loop exits gracefully on GameExitError.
     """
@@ -26,7 +26,7 @@ def test_main_loop_exit() -> None:
 
     mock_scene = mock.Mock(spec=scene.Scene)
     mock_scene.update.side_effect = errors.GameExitError("Test Exit")
-    g.scenes.append(mock_scene)
+    g["mock_scene"] = mock_scene
     g.set_current_scene(mock_scene.__class__)
 
     g.main_loop()
@@ -49,7 +49,7 @@ def test_set_current_scene() -> None:
     g = game.Game(clock)
 
     mock_scene = mock.Mock(spec=scene.Scene)
-    g.scenes.append(mock_scene)
+    g["mock_scene"] = mock_scene
     g.set_current_scene(mock_scene.__class__)
 
     assert g._next_scene is mock_scene
