@@ -310,20 +310,20 @@ class FSMMixin:
 
         handlers: Dict[StateID, _MethodAdapterState] = {}
 
-        members = inspect.getmembers(self, predicate=inspect.ismethod)
-        for _, method in members:
+        for _, method in inspect.getmembers(self.__class__, predicate=inspect.isfunction):
             if hasattr(method, "_fsm_meta"):
+                bound_method = method.__get__(self)
                 for event_type, state_id in method._fsm_meta:
                     if state_id not in handlers:
                         handlers[state_id] = _MethodAdapterState()
 
                     adapter = handlers[state_id]
                     if event_type == "enter":
-                        adapter.enter_fn = method
+                        adapter.enter_fn = bound_method
                     elif event_type == "exit":
-                        adapter.exit_fn = method
+                        adapter.exit_fn = bound_method
                     elif event_type == "update":
-                        adapter.update_fn = method
+                        adapter.update_fn = bound_method
 
         for state_id, adapter in handlers.items():
             self.fsm.register_state(state_id, adapter)
