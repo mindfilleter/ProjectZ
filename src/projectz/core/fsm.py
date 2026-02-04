@@ -10,15 +10,23 @@ This module provides a flexible FSM implementation that supports two usage patte
 :license: MIT
 """
 
-import logging
 import inspect
+import logging
 from enum import Enum
-from typing import Any, Dict, List, Set, Tuple, Callable, Type, Union, Optional
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Type
+from typing import Union
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(message)s")
 
-StateID = Union[Enum, Type, str]
+StateID = Union[Enum, Type[Any], str]
 
 
 class State:
@@ -66,7 +74,7 @@ class StateMachine:
     via the ``FSMMixin`` which wraps this engine.
     """
 
-    def __init__(self, owner: Any, initial_state: StateID = None):
+    def __init__(self, owner: Any, initial_state: Optional[StateID] = None):
         """
         Initialize the StateMachine.
 
@@ -79,7 +87,7 @@ class StateMachine:
         self.owner = owner
         self._transitions: Dict[StateID, Set[StateID]] = {}
 
-        self._current_state_id: StateID = None
+        self._current_state_id: Optional[StateID] = None
         self._current_state_handler: Optional[State] = None
 
         self._state_registry: Dict[StateID, State] = {}
@@ -143,7 +151,9 @@ class StateMachine:
                 self._current_state_handler.exit(self.owner)
 
         logger.info(
-            f"FSM Transition: {self._get_name(self._current_state_id)} -> {self._get_name(new_state_id)}"
+            "FSM Transition: %s -> %s",
+            self._get_name(self._current_state_id),
+            self._get_name(new_state_id),
         )
 
         handler = self._resolve_state_handler(new_state_id)
@@ -173,7 +183,7 @@ class StateMachine:
 
         raise ValueError(f"Could not resolve a State Handler for state ID: {state_id}")
 
-    def _get_name(self, state_id: StateID) -> str:
+    def _get_name(self, state_id: Optional[StateID]) -> str:
         if state_id is None:
             return "None"
         if isinstance(state_id, Enum):
@@ -183,7 +193,7 @@ class StateMachine:
         return str(state_id)
 
     @property
-    def current_state(self) -> StateID:
+    def current_state(self) -> Optional[StateID]:
         """
         Get the identifier of the currently active state.
 
@@ -193,7 +203,7 @@ class StateMachine:
         return self._current_state_id
 
 
-def on_fsm_enter(state: StateID) -> Callable:
+def on_fsm_enter(state: StateID) -> Callable[..., Any]:
     """
     Decorator to register a method as the ENTER handler for a specific state.
 
@@ -201,16 +211,16 @@ def on_fsm_enter(state: StateID) -> Callable:
     :type state: StateID
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         if not hasattr(func, "_fsm_meta"):
-            func._fsm_meta = []
-        func._fsm_meta.append(("enter", state))
+            setattr(func, "_fsm_meta", [])
+        getattr(func, "_fsm_meta").append(("enter", state))
         return func
 
     return decorator
 
 
-def on_fsm_exit(state: StateID) -> Callable:
+def on_fsm_exit(state: StateID) -> Callable[..., Any]:
     """
     Decorator to register a method as the EXIT handler for a specific state.
 
@@ -218,16 +228,16 @@ def on_fsm_exit(state: StateID) -> Callable:
     :type state: StateID
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         if not hasattr(func, "_fsm_meta"):
-            func._fsm_meta = []
-        func._fsm_meta.append(("exit", state))
+            setattr(func, "_fsm_meta", [])
+        getattr(func, "_fsm_meta").append(("exit", state))
         return func
 
     return decorator
 
 
-def on_fsm_update(state: StateID) -> Callable:
+def on_fsm_update(state: StateID) -> Callable[..., Any]:
     """
     Decorator to register a method as the UPDATE handler for a specific state.
 
@@ -235,10 +245,10 @@ def on_fsm_update(state: StateID) -> Callable:
     :type state: StateID
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         if not hasattr(func, "_fsm_meta"):
-            func._fsm_meta = []
-        func._fsm_meta.append(("update", state))
+            setattr(func, "_fsm_meta", [])
+        getattr(func, "_fsm_meta").append(("update", state))
         return func
 
     return decorator
@@ -249,10 +259,10 @@ class _MethodAdapterState(State):
     Internal Adapter to wrap method callbacks into a State object.
     """
 
-    def __init__(self):
-        self.enter_fn = None
-        self.exit_fn = None
-        self.update_fn = None
+    def __init__(self) -> None:
+        self.enter_fn: Optional[Callable[[], None]] = None
+        self.exit_fn: Optional[Callable[[], None]] = None
+        self.update_fn: Optional[Callable[[float], None]] = None
 
     def enter(self, owner: Any) -> None:
         if self.enter_fn:
@@ -281,9 +291,9 @@ class FSMMixin:
     """
 
     fsm_transitions: List[Tuple[StateID, Set[StateID]]] = []
-    fsm_initial_state: StateID = None
+    fsm_initial_state: Optional[StateID] = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.fsm = StateMachine(self)
@@ -337,7 +347,7 @@ class FSMMixin:
         self.fsm.update(dt)
 
     @property
-    def current_state(self) -> StateID:
+    def current_state(self) -> Optional[StateID]:
         """
         Get the current active state.
 

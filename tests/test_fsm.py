@@ -1,8 +1,9 @@
+from enum import Enum
 from unittest import mock
 
 import pytest
 
-from projectz import fsm
+from projectz.core import fsm
 
 
 class MockState(fsm.State):
@@ -30,10 +31,7 @@ class TestStateMachine:
         owner = mock.Mock()
         machine = fsm.StateMachine(owner, MockState)
         machine.add_transitions([(MockState, {AnotherState})])
-        with (
-            mock.patch.object(MockState, "exit") as mock_exit,
-            mock.patch.object(AnotherState, "enter") as mock_enter,
-        ):
+        with mock.patch.object(AnotherState, "enter") as mock_enter:
             machine.change_state(AnotherState)
             # The exit method is called on the state *instance*, not the class
             # The old state is not available anymore, so we can't check it
@@ -50,9 +48,11 @@ class TestStateMachine:
     def test_update(self) -> None:
         owner = mock.Mock()
         machine = fsm.StateMachine(owner, MockState)
-        # We need to get the instance of the state to patch it, since the machine creates it.
-        # This is a bit of a hack, but it's the only way to test this without changing the implementation.
-        # A better solution would be to have the machine return the state instance, but that would change the API.
+        # We need to get the instance of the state to patch it, since the
+        # machine creates it. This is a bit of a hack, but it's the only way
+        # to test this without changing the implementation.
+        # A better solution would be to have the machine return the state
+        # instance, but that would change the API.
         state_instance = machine._resolve_state_handler(MockState)
         with mock.patch.object(state_instance, "update") as mock_update:
             machine._current_state_handler = state_instance  # force the handler
@@ -84,9 +84,6 @@ class TestStateMachine:
         )
         assert machine._transitions[MockState] == {AnotherState}
         assert machine._transitions[AnotherState] == {MockState}
-
-
-from enum import Enum
 
 
 class States(Enum):

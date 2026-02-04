@@ -3,9 +3,9 @@ from unittest import mock
 import pytest
 from pygame import time
 
-from projectz import errors
-from projectz import game
-from projectz import scene
+from projectz.core import errors
+from projectz.core import game
+from projectz.core import scene
 
 
 def test_game_initialization() -> None:

@@ -51,9 +51,6 @@ class Entity(sprite.Sprite, Mapping[Type[Component], Component]):
         for component in self._components:
             if isinstance(component, key):
                 return component
-
-        # We let the KeyError bubble up. The top-level handler can log
-        # the stack trace to show exactly where the lookup failed.
         raise KeyError(f"Component of type {key.__name__} not found on {self}")
 
     def __iter__(self) -> Iterator[Type[Component]]:

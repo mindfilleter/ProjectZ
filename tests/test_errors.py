@@ -1,4 +1,4 @@
-from projectz import errors
+from projectz.core import errors
 
 
 def test_game_exit_error_initialization() -> None:

@@ -6,8 +6,8 @@ from typing import Type
 from pygame import event
 from pygame import time
 
-from projectz import errors
-from projectz import scene
+from projectz.core import errors
+from projectz.core import scene
 
 logger = logging.getLogger(__name__)
 

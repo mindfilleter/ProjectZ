@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from pygame import event
 
-from projectz import entity
+from projectz.core import entity
 
 
 class MockComponent(entity.Component):
