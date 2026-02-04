@@ -11,7 +11,6 @@ This module provides a flexible FSM implementation that supports two usage patte
 """
 
 import inspect
-import logging
 from enum import Enum
 from typing import Any
 from typing import Callable
@@ -23,8 +22,10 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(message)s")
+import structlog
+
+logger = structlog.get_logger(__name__)
+
 
 StateID = Union[Enum, Type[Any], str]
 

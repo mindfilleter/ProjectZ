@@ -1,5 +1,4 @@
 import abc
-import logging
 from collections.abc import Mapping
 from typing import Iterator
 from typing import List
@@ -7,10 +6,11 @@ from typing import Optional
 from typing import Type
 from typing import TypeVar
 
+import structlog
 from pygame import event
 from pygame import sprite
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 T = TypeVar("T", bound="Component")
 
 

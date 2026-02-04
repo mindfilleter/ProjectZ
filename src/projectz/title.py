@@ -1,6 +1,5 @@
-import logging
-
 import pygame
+import structlog
 from pygame import display
 from pygame import event
 from pygame import sprite
@@ -11,7 +10,7 @@ from projectz.core import errors
 from projectz.core import scene
 from projectz.ui import button
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class TitleScene(scene.Scene):

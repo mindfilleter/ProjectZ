@@ -1,21 +1,22 @@
-import logging
 from collections.abc import MutableMapping
 from typing import Dict
 from typing import Iterator
 from typing import Optional
 from typing import Type
 
+import structlog
 from pygame import event
 from pygame import time
 
 from projectz.core import errors
 from projectz.core import scene
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class Game(MutableMapping[str, scene.Scene]):
     def __init__(self, clock: time.Clock) -> None:
+        self.frame_count: int = 0
         self.scenes: Dict[str, scene.Scene] = {}
         self.current_scene: Optional[scene.Scene] = None
         self._next_scene: Optional[scene.Scene] = None
@@ -48,6 +49,7 @@ class Game(MutableMapping[str, scene.Scene]):
     def main_loop(self) -> None:
         try:
             while self.current_scene is not None:
+                self.frame_count += 1
                 for e in event.get():
                     self.current_scene.handle_event(e)
                 self.current_scene.update(self.clock.tick(60))

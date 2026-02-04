@@ -12,8 +12,8 @@ def init_pygame() -> None:
     display.set_caption("ProjectZ")
 
 
-def create_game() -> game.Game:
-    g = game.Game(time.Clock())
+def create_game(clock: time.Clock) -> game.Game:
+    g = game.Game(clock)
 
     title_scene = title.TitleScene()
     g[title_scene.name] = title_scene
