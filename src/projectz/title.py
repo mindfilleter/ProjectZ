@@ -16,11 +16,16 @@ logger = structlog.get_logger(__name__)
 class TitleScene(scene.Scene):
     def __init__(self) -> None:
         self.sprites: sprite.Group[entity.Entity] = sprite.Group()
-        bg = entity.Entity(self.sprites)
+        self._create_background(self.sprites)
+        self._create_buttons(self.sprites)
+
+    def _create_background(self, group: sprite.Group[entity.Entity]) -> None:
+        bg = entity.Entity(group)
         bg.image = assets.get_image("title-bg.png")
         bg.rect = pygame.Rect((0, 0), bg.image.get_size())
         logger.debug(bg.rect)
 
+    def _create_buttons(self, group: sprite.Group[entity.Entity]) -> None:
         screen = display.get_surface()
         if not screen:
             raise RuntimeError("No display surface found")
@@ -45,7 +50,7 @@ class TitleScene(scene.Scene):
         )
         if new_game_btn.rect:
             new_game_btn.rect.topleft = (start_x, start_y)
-        self.sprites.add(new_game_btn)
+        group.add(new_game_btn)
 
         load_game_btn = button.create_button(
             size=button_size,
@@ -57,7 +62,7 @@ class TitleScene(scene.Scene):
         )
         if load_game_btn.rect:
             load_game_btn.rect.topleft = (start_x + button_size[0] + button_margin, start_y)
-        self.sprites.add(load_game_btn)
+        group.add(load_game_btn)
 
         options_btn = button.create_button(
             size=button_size,
@@ -69,7 +74,7 @@ class TitleScene(scene.Scene):
         )
         if options_btn.rect:
             options_btn.rect.topleft = (start_x, start_y + button_size[1] + button_margin)
-        self.sprites.add(options_btn)
+        group.add(options_btn)
 
         quit_btn = button.create_button(
             size=button_size,
@@ -84,7 +89,7 @@ class TitleScene(scene.Scene):
                 start_x + button_size[0] + button_margin,
                 start_y + button_size[1] + button_margin,
             )
-        self.sprites.add(quit_btn)
+        group.add(quit_btn)
 
     name = "title"
 
